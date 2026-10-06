@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Read Credit Bureau Cambodia (CBC) enquiry XML exports in your browser.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CBC Report Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Khmer:wght@400;600&display=swap">
+<style>
+/* Layout: toolbar + intake strip on top; applicant index as a sticky left rail beside the report sheet; rail stacks above the sheet on phones */
+:root{
+  --paper:#F2F4F1; --sheet:#FFFFFF; --ink:#17222A; --muted:#5A6970; --rule:#D8DED9; --tint:#E9EEEA;
+  --accent:#0D6A65; --accent-ink:#FFFFFF; --accent-soft:#D9ECE8;
+  --good:#2E7449; --good-soft:#E0F0E5; --warn:#8F5600; --warn-soft:#FAEBD2; --bad:#B42318; --bad-soft:#FBE4E1;
+  --f-display:"IBM Plex Sans Condensed","Noto Sans Khmer","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans","Noto Sans Khmer",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F1518; --sheet:#162024; --ink:#E3E9E6; --muted:#93A3A9; --rule:#28343A; --tint:#1D292D;
+  --accent:#5BC1B7; --accent-ink:#0A1A19; --accent-soft:#15332F;
+  --good:#6FC794; --good-soft:#163222; --warn:#EFB45C; --warn-soft:#37290F; --bad:#F2887D; --bad-soft:#3B1916;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0F1518; --sheet:#162024; --ink:#E3E9E6; --muted:#93A3A9; --rule:#28343A; --tint:#1D292D;
+  --accent:#5BC1B7; --accent-ink:#0A1A19; --accent-soft:#15332F;
+  --good:#6FC794; --good-soft:#163222; --warn:#EFB45C; --warn-soft:#37290F; --bad:#F2887D; --bad-soft:#3B1916;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1280px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:flex;flex-direction:column;gap:16px}
+
+/* toolbar */
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{font:700 13px/1 var(--f-display);letter-spacing:.1em;background:var(--accent);color:var(--accent-ink);padding:9px 8px;border-radius:4px}
+h1{font:600 22px/1.15 var(--f-display);margin:0;letter-spacing:.01em}
+.brand p{margin:0;color:var(--muted);font-size:13px}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.btn{font:500 14px/1 var(--f-body);padding:10px 14px;border-radius:6px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.6;cursor:progress}
+.btn.small{padding:6px 10px;font-size:12.5px}
+.switch{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.switch input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+
+/* intake */
+.intake{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:14px 16px;border:1.5px dashed var(--rule);border-radius:10px;background:var(--sheet)}
+.intake .msg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.intake .msg strong{font-weight:600}
+.intake .hint{color:var(--muted);font-size:13px}
+.tag{font:600 11px/1 var(--f-display);letter-spacing:.09em;text-transform:uppercase;padding:5px 7px;border-radius:4px;background:var(--warn-soft);color:var(--warn)}
+.tag.ok{background:var(--accent-soft);color:var(--accent)}
+
+.issues{display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-radius:10px;background:var(--bad-soft);color:var(--ink);font-size:14px}
+.issues b{color:var(--bad)}
+
+/* layout */
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:20px;align-items:start}
+.layout.single{grid-template-columns:minmax(0,1fr)}
+.layout.single .index{display:none}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+.index{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 24px);background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:12px;min-width:0}
+@media (max-width:900px){.index{position:static;max-height:none}}
+.index-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px}
+.index-head h2{font:600 12px/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.index-head span{font:500 12px var(--f-mono);color:var(--muted)}
+.search{width:100%;font:14px var(--f-body);padding:9px 11px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink)}
+.search::placeholder{color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0}
+@media (max-width:900px){.list{max-height:280px}}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;text-align:left;background:transparent;border:0;border-radius:6px;padding:9px 10px;cursor:pointer}
+.item:hover{background:var(--tint)}
+.item[aria-current="true"]{background:var(--accent-soft)}
+.item .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{grid-column:1/-1;font:12px/1.35 var(--f-mono);color:var(--muted)}
+.item .n{font:500 12px var(--f-mono);color:var(--muted);align-self:center}
+.list .none{color:var(--muted);font-size:13px;padding:8px 10px}
+
+/* report */
+.report{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;min-width:0}
+
+.idhead{padding:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 28px}
+@media (max-width:680px){.idhead{grid-template-columns:minmax(0,1fr)}}
+.eyebrow{font:600 11.5px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.who h2{font:600 32px/1.08 var(--f-display);margin:0 0 10px;letter-spacing:.01em;text-wrap:balance;overflow-wrap:anywhere}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--muted);font-size:14px}
+.facts b{color:var(--ink);font-weight:500}
+.refs{display:grid;grid-template-columns:auto auto;gap:5px 16px;font-size:13px;margin:0;align-content:start}
+.refs dt{color:var(--muted)}
+.refs dd{margin:0;font-family:var(--f-mono);text-align:right;overflow-wrap:anywhere}
+@media (max-width:680px){.refs dd{text-align:left}}
+.statusline{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1.25 var(--f-body);padding:6px 10px;border-radius:999px;background:var(--tint);color:var(--ink);max-width:100%}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:4px;padding:6px}
+.tile{padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;border-radius:7px}
+.tile .lab{font:600 11.5px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .val{font:600 27px/1.1 var(--f-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile .val small{font-size:14px;font-weight:500;color:var(--muted)}
+.tile .sub{font-size:12.5px;color:var(--muted)}
+.tile.multi .val{font-size:20px;line-height:1.25}
+.tile.warn{background:var(--warn-soft)} .tile.warn .val{color:var(--warn)}
+.tile.bad{background:var(--bad-soft)} .tile.bad .val{color:var(--bad)}
+
+.block > header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 12px;padding:14px 20px;border-bottom:1px solid var(--rule)}
+.block h3{font:600 17px/1.2 var(--f-display);margin:0;display:flex;align-items:center;gap:8px;letter-spacing:.01em}
+.count{font:500 12px/1 var(--f-mono);color:var(--muted);background:var(--tint);padding:4px 7px;border-radius:999px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 20px 0}
+.chip{font:500 12.5px/1 var(--f-body);padding:6px 9px;border-radius:5px;background:var(--tint);color:var(--ink)}
+.chip b{font-family:var(--f-mono);font-weight:500}
+.chip.hot{background:var(--warn-soft);color:var(--warn)}
+.empty{padding:16px 20px;color:var(--muted);margin:0}
+
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font:600 11.5px/1.2 var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;vertical-align:bottom}
+td{padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top;white-space:nowrap}
+th:first-child,td:first-child{padding-left:20px}
+th:last-child,td:last-child{padding-right:20px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--tint)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+td.mono{font:12.5px var(--f-mono)}
+td.dim,dd.dim{color:var(--muted)}
+tr.diff td{background:var(--warn-soft)}
+tr.diff td:first-child{color:var(--warn);font-weight:600}
+
+.accts{display:grid;gap:12px;padding:16px 20px}
+.acct{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.acct-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 12px}
+.acct-head .lender{font:600 16px/1.2 var(--f-display)}
+.acct-head .meta{font:12.5px var(--f-mono);color:var(--muted)}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 18px;margin:0}
+.kv > div{min-width:0}
+.kv dt{font-size:12px;color:var(--muted)}
+.kv dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kv dd.mono{font-family:var(--f-mono);font-size:13px}
+.kv dd.warn{color:var(--warn);font-weight:600}
+
+/* loan account filters and totals */
+.acc-controls{display:flex;flex-direction:column;gap:12px;padding:14px 20px;border-bottom:1px solid var(--rule)}
+.ctl{display:flex;flex-direction:column;gap:8px}
+.ctl-label{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font:600 11.5px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ctl-n{font:500 12px var(--f-mono);letter-spacing:0;text-transform:none}
+.link{background:none;border:0;padding:2px 0;color:var(--accent);font:500 13px var(--f-body);letter-spacing:0;text-transform:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.bankchips{display:flex;flex-wrap:wrap;gap:6px}
+.bchip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);cursor:pointer;font-size:13.5px;max-width:100%;user-select:none}
+.bchip:hover{border-color:var(--accent)}
+.bchip input{accent-color:var(--accent);margin:0;width:15px;height:15px;flex:none}
+.bchip span{overflow-wrap:anywhere}
+.bchip b{font:500 12px var(--f-mono);color:var(--muted)}
+.bchip:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.bchip:has(input:not(:checked)) span{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.bchip:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:3px;padding:3px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+.seg label{position:relative;display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:5px;cursor:pointer;font:500 13.5px/1 var(--f-body);color:var(--muted)}
+.seg label:hover{color:var(--ink)}
+.seg input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.seg b{font:500 12px var(--f-mono);opacity:.85}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:4px;margin:16px 20px 0;padding:6px;border-radius:8px;background:var(--tint)}
+.tot{padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tot .lab{font:600 11.5px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tot .val{font:600 20px/1.25 var(--f-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tot .sub{font-size:12.5px;color:var(--muted)}
+.tot.warn .val{color:var(--warn)}
+.totnote{margin:8px 20px 0;font-size:12.5px;color:var(--muted)}
+.bankgroup{display:flex;flex-direction:column;gap:10px;padding:18px 20px 0}
+.bankgroup:last-child{padding-bottom:18px}
+.bg-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:6px 18px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+.bg-head h4{font:600 15.5px/1.2 var(--f-display);margin:0;letter-spacing:.02em}
+.bg-head .meta{font:12.5px var(--f-mono);color:var(--muted);margin-top:2px}
+.bg-tot{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0;font-size:13px}
+.bg-tot div{display:flex;gap:6px;align-items:baseline}
+.bg-tot dt{color:var(--muted)}
+.bg-tot dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.accts.tight{padding:0}
+div.empty .link{margin-left:4px}
+
+.code{display:none;font:500 10.5px var(--f-mono);letter-spacing:0;text-transform:none;color:var(--muted);margin-left:5px;opacity:.85}
+body.codes .code{display:inline}
+
+details.raw > summary{cursor:pointer;padding:14px 20px;font:600 15px var(--f-display);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+details.raw > summary::-webkit-details-marker{display:none}
+details.raw > summary::after{content:"Show";font:500 12.5px var(--f-body);color:var(--accent)}
+details.raw[open] > summary::after{content:"Hide"}
+details.raw .rawtools{display:flex;justify-content:flex-end;padding:0 20px 10px}
+pre.xml{margin:0;max-height:440px;overflow:auto;padding:16px 20px;background:var(--tint);font:12px/1.55 var(--f-mono);border-top:1px solid var(--rule);border-radius:0 0 10px 10px;white-space:pre}
+.disclaimer{font-size:12px;color:var(--muted);margin:0;padding:0 4px;max-width:90ch}
+
+.blank{padding:40px 24px;text-align:center;color:var(--muted)}
+.blank h2{font:600 20px var(--f-display);color:var(--ink);margin:0 0 6px}
+
+.overlay{position:fixed;inset:0;display:none;place-items:center;background:color-mix(in srgb,var(--accent) 16%,transparent);z-index:20;pointer-events:none}
+.overlay div{font:600 20px var(--f-display);color:var(--accent-ink);background:var(--accent);padding:16px 22px;border-radius:10px}
+body.dragging .overlay{display:grid}
+
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);font-size:14px;padding:10px 16px;border-radius:8px;z-index:30;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+@media (prefers-reduced-motion:no-preference){.toast{animation:rise .18s ease-out}@keyframes rise{from{transform:translate(-50%,8px);opacity:.4}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">CBC</span>
+      <div>
+        <h1>Report Reader</h1>
+        <p>Credit Bureau Cambodia enquiry responses, made readable</p>
+      </div>
+    </div>
+    <div class="actions">
+      <label class="switch" for="codes"><input type="checkbox" id="codes"> Show field codes</label>
+      <button class="btn" id="export" type="button" hidden>Export to Excel</button>
+      <button class="btn primary" id="open" type="button">Open file</button>
+      <input type="file" id="file" accept=".txt,.xml,.csv,.tsv,text/plain,text/xml" multiple hidden>
+    </div>
+  </header>
+
+  <div class="intake" id="intake">
+    <div class="msg" id="intakeMsg"></div>
+    <span class="hint">Drop a .txt file anywhere or paste the text. Files are read in your browser and never uploaded.</span>
+  </div>
+
+  <div class="issues" id="issues" hidden></div>
+
+  <main class="layout" id="layout">
+    <aside class="index" aria-label="Applicants">
+      <div class="index-head"><h2>Applicants</h2><span id="indexCount"></span></div>
+      <input class="search" id="search" type="search" placeholder="Search name, ID or reference" autocomplete="off">
+      <div class="list" id="list"></div>
+    </aside>
+    <section class="report" id="report" aria-live="polite"></section>
+  </main>
+</div>
+
+<div class="overlay" aria-hidden="true"><div>Drop to read the file</div></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+
+/* ---------------- example data (invented people, clearly labelled in the UI) ---------------- */
+const SAMPLE = `|xml_data|
+|<RESPONSE><SERVICE>ENQUIRYV6</SERVICE><ACTION>A_SC</ACTION><STATUS>OK</STATUS><HEADER><MEMBER_ID>00</MEMBER_ID><USER_ID>DEMO</USER_ID><RUN_NO>001</RUN_NO><TOT_ITEMS>1</TOT_ITEMS><ERR_ITEMS></ERR_ITEMS></HEADER><MESSAGE><ITEM><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><RSP_REPORT><ENQUIRY_TYPE>NA</ENQUIRY_TYPE><REPORT_DATE>15/08/2026</REPORT_DATE><ENQUIRY_NO>000000101</ENQUIRY_NO><PRODUCT_TYPE>PEL</PRODUCT_TYPE><NO_OF_APPLICANTS>1</NO_OF_APPLICANTS><ACCOUNT_TYPE>S</ACCOUNT_TYPE><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><AMOUNT>1500.00</AMOUNT><CURRENCY>USD</CURRENCY><CONSUMER><CAPL>P</CAPL><CID><CID1>N</CID1><CID2>000000001</CID2><CID3>30/06/2030</CID3></CID><PROVIDED><PCNAM><PCNMFE>SOK</PCNMFE><PCNM1E>DARA</PCNM1E></PCNAM><PCDOB>14/03/1993</PCDOB><PCPLB><PCPLBC>KHM</PCPLBC><PCPLBP>17</PCPLBP></PCPLB><PCGND>M</PCGND><PCMAR>M</PCMAR><PCNAT>KHM</PCNAT><PCEML /></PROVIDED><AVAILABLE><ACID><ACID1>N</ACID1><ACID2>000000001</ACID2><ACID3>30/06/2030</ACID3></ACID><ACNAM><ACNMFE>SOK</ACNMFE><ACNM1E>DARA</ACNM1E></ACNAM><ACDOB>14/03/1993</ACDOB><ACPLB><ACPLBC>KHM</ACPLBC><ACPLBP>17</ACPLBP></ACPLB><ACGND>M</ACGND><ACMAR>S</ACMAR><ACNAT>KHM</ACNAT><ACEML /></AVAILABLE><ADDITIONAL_NAMES><ADDITIONAL_NAME><ANM_CNMFE>DARA</ANM_CNMFE><ANM_CNM1E>SOK</ANM_CNM1E><ANM_LOAD_DT>02/05/2024</ANM_LOAD_DT></ADDITIONAL_NAME></ADDITIONAL_NAMES><PREV_ENQUIRIES><PREV_ENQUIRY><PE_DATE>28/07/2026</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0005</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>20/07/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0004</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1000.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>03/06/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0003</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>800.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>05/03/2026</PE_DATE><PE_ENQR>EXAMPLE FINANCE PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002B</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>2000000.00</PE_AMOUNT><PE_CURR>KHR</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>11/11/2025</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>02/05/2024</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0001A</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>600.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>DARA</PE_NMFE><PE_NM1E>SOK</PE_NM1E></PE_NAME></PREV_ENQUIRY></PREV_ENQUIRIES><ACC_DETAILS><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000003</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>1000.00</ACC_LIMIT><ACC_ISSU_DT>25/07/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>25/07/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>92.50</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD></ACC_LAST_AMT_PD><ACC_LAST_PAY_DT></ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>25/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE FINANCE PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000004</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>KHR</ACC_CURR><ACC_LIMIT>2000000.00</ACC_LIMIT><ACC_ISSU_DT>10/03/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/03/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>185000.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1150000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>185000.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>10/07/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>10/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE BANK PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000002</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>500.00</ACC_LIMIT><ACC_ISSU_DT>18/11/2025</ACC_ISSU_DT><ACC_PROD_EXP_DT>18/05/2026</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>15/05/2026</ACC_CLSD_DT><ACC_TNR>6</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>88.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>88.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>15/05/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000001</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>600.00</ACC_LIMIT><ACC_ISSU_DT>10/05/2024</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/05/2025</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>08/05/2025</ACC_CLSD_DT><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>55.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>55.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>08/05/2025</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2025</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL></ACC_DETAILS><ADDRESSES><ADDRESS><CA_LOAD_DT>28/07/2026</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1710</CA_DIST><CA_COMM>171005</CA_COMM><CA_VILL>17100502</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS><ADDRESS><CA_LOAD_DT>02/05/2024</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1704</CA_DIST><CA_COMM>170402</CA_COMM><CA_VILL>17040207</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS></ADDRESSES><EMPLOYERS><EMPLOYER><EDLD>28/07/2026</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>30</ELEN><ETMS>450.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER><EMPLOYER><EDLD>11/11/2025</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>22</ELEN><ETMS>400.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER></EMPLOYERS><ADVISORY_SUMMARY_TEXT><ADVISORY_TEXT>NOADV</ADVISORY_TEXT></ADVISORY_SUMMARY_TEXT><SUMMARY><CNT_PE>6</CNT_PE><CNT_MTDE>2</CNT_MTDE><CNT_ACC>4</CNT_ACC><CNT_ACC_NORM>2</CNT_ACC_NORM><CNT_ACC_DELQ>0</CNT_ACC_DELQ><CNT_ACC_CLO>2</CNT_ACC_CLO><CNT_ACC_REJ>0</CNT_ACC_REJ><CNT_ACC_WRO>0</CNT_ACC_WRO><CNT_GACC>0</CNT_GACC><CNT_GACC_NORM>0</CNT_GACC_NORM><CNT_GACC_DELQ>0</CNT_GACC_DELQ><CNT_GACC_ACC_CLO>0</CNT_GACC_ACC_CLO><CNT_GACC_REJ>0</CNT_GACC_REJ><CNT_GACC_WRO>0</CNT_GACC_WRO><EISDT>10/05/2024</EISDT><TOT_LIMITS><TOT_LIM_CURR>USD</TOT_LIM_CURR><TOT_LIM>2100.00</TOT_LIM></TOT_LIMITS><TOT_LIMITS><TOT_LIM_CURR>KHR</TOT_LIM_CURR><TOT_LIM>2000000.00</TOT_LIM></TOT_LIMITS><TOT_GLIMITS><TOT_GLIM_CURR /><TOT_GLIM>0.00</TOT_GLIM></TOT_GLIMITS><TOT_LIABILITIES><TOT_LIAB_CURR>USD</TOT_LIAB_CURR><TOT_LIAB>1000.00</TOT_LIAB></TOT_LIABILITIES><TOT_LIABILITIES><TOT_LIAB_CURR>KHR</TOT_LIAB_CURR><TOT_LIAB>1150000.00</TOT_LIAB></TOT_LIABILITIES><TOT_GLIABILITIES><TOT_GLIAB_CURR /><TOT_GLIAB>0.00</TOT_GLIAB></TOT_GLIABILITIES><TOT_WO_AMT><TOT_WO_CURR /><TOT_WO>0.00</TOT_WO></TOT_WO_AMT><TOT_GWO_AMT><TOT_GWO_CURR /><TOT_GWO>0.00</TOT_GWO></TOT_GWO_AMT><TOT_WO_OS_BALANCE><TOT_WO_OS_CURR /><TOT_WO_OS_BAL>0.00</TOT_WO_OS_BAL></TOT_WO_OS_BALANCE><TOT_GWO_OS_BALANCE><TOT_GWO_OS_CURR /><TOT_GWO_OS_BAL>0.00</TOT_GWO_OS_BAL></TOT_GWO_OS_BALANCE></SUMMARY></CONSUMER><DISCLAIMER><DI_TEXT>Example report. All people, lenders and numbers here are invented to show how the reader works.</DI_TEXT></DISCLAIMER></RSP_REPORT></ITEM></MESSAGE></RESPONSE>|
+|<RESPONSE><SERVICE>ENQUIRYV6</SERVICE><ACTION>A_SC</ACTION><STATUS>OK</STATUS><HEADER><MEMBER_ID>00</MEMBER_ID><USER_ID>DEMO</USER_ID><RUN_NO>001</RUN_NO><TOT_ITEMS>1</TOT_ITEMS><ERR_ITEMS></ERR_ITEMS></HEADER><MESSAGE><ITEM><ENQUIRY_REFERENCE>DEMO_0002</ENQUIRY_REFERENCE><RSP_REPORT><ENQUIRY_TYPE>NA</ENQUIRY_TYPE><REPORT_DATE>15/08/2026</REPORT_DATE><ENQUIRY_NO>000000102</ENQUIRY_NO><PRODUCT_TYPE>PEL</PRODUCT_TYPE><NO_OF_APPLICANTS>1</NO_OF_APPLICANTS><ACCOUNT_TYPE>S</ACCOUNT_TYPE><ENQUIRY_REFERENCE>DEMO_0002</ENQUIRY_REFERENCE><AMOUNT>300000.00</AMOUNT><CURRENCY>KHR</CURRENCY><CONSUMER><CAPL>P</CAPL><CID><CID1>N</CID1><CID2>000000002</CID2><CID3>12/02/2031</CID3></CID><PROVIDED><PCNAM><PCNMFE>KEO</PCNMFE><PCNM1E>CHANTHA</PCNM1E></PCNAM><PCDOB>22/09/2001</PCDOB><PCPLB><PCPLBC>KHM</PCPLBC><PCPLBP>12</PCPLBP></PCPLB><PCGND>F</PCGND><PCMAR>S</PCMAR><PCNAT>KHM</PCNAT><PCEML /></PROVIDED><AVAILABLE><ACID><ACID1>N</ACID1><ACID2>000000002</ACID2><ACID3>12/02/2031</ACID3></ACID><ACNAM><ACNMFE>KEO</ACNMFE><ACNM1E>CHANTHA</ACNM1E></ACNAM><ACDOB>22/09/2001</ACDOB><ACPLB><ACPLBC>KHM</ACPLBC><ACPLBP>12</ACPLBP></ACPLB><ACGND>F</ACGND><ACMAR>S</ACMAR><ACNAT>KHM</ACNAT><ACEML /></AVAILABLE><PREV_ENQUIRIES><PREV_ENQUIRY><PE_DATE>01/03/2026</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0010</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>300000.00</PE_AMOUNT><PE_CURR>KHR</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>KEO</PE_NMFE><PE_NM1E>CHANTHA</PE_NM1E></PE_NAME></PREV_ENQUIRY></PREV_ENQUIRIES><ADDRESSES><ADDRESS><CA_LOAD_DT>01/03/2026</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>12</CA_PROV><CA_DIST>1209</CA_DIST><CA_COMM>120903</CA_COMM><CA_VILL>12090304</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS></ADDRESSES><EMPLOYERS><EMPLOYER><EDLD>01/03/2026</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>14</ELEN><ETMS>320.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE GARMENT FACTORY</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>08</EA_PROV><EA_DIST>0811</EA_DIST><EA_COMM>081102</EA_COMM><EA_VILL>08110205</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER></EMPLOYERS><ADVISORY_SUMMARY_TEXT><ADVISORY_TEXT>NOADV</ADVISORY_TEXT></ADVISORY_SUMMARY_TEXT><SUMMARY><CNT_PE>1</CNT_PE><CNT_MTDE>0</CNT_MTDE><CNT_ACC>0</CNT_ACC><CNT_ACC_NORM>0</CNT_ACC_NORM><CNT_ACC_DELQ>0</CNT_ACC_DELQ><CNT_ACC_CLO>0</CNT_ACC_CLO><CNT_ACC_REJ>0</CNT_ACC_REJ><CNT_ACC_WRO>0</CNT_ACC_WRO><CNT_GACC>0</CNT_GACC><EISDT /><TOT_LIMITS><TOT_LIM_CURR /><TOT_LIM>0.00</TOT_LIM></TOT_LIMITS><TOT_LIABILITIES><TOT_LIAB_CURR /><TOT_LIAB>0.00</TOT_LIAB></TOT_LIABILITIES><TOT_WO_AMT><TOT_WO_CURR /><TOT_WO>0.00</TOT_WO></TOT_WO_AMT><TOT_WO_OS_BALANCE><TOT_WO_OS_CURR /><TOT_WO_OS_BAL>0.00</TOT_WO_OS_BAL></TOT_WO_OS_BALANCE></SUMMARY><SCORE><SC_ERROR>SE3   - Applicant has no primary accounts or no valid repayment status</SC_ERROR></SCORE></CONSUMER><DISCLAIMER><DI_TEXT>Example report. All people, lenders and numbers here are invented to show how the reader works.</DI_TEXT></DISCLAIMER></RSP_REPORT></ITEM></MESSAGE></RESPONSE>|`;
+
+/* ---------------- dictionaries ---------------- */
+const PROVINCES = {
+  '01':'Banteay Meanchey','02':'Battambang','03':'Kampong Cham','04':'Kampong Chhnang','05':'Kampong Speu',
+  '06':'Kampong Thom','07':'Kampot','08':'Kandal','09':'Koh Kong','10':'Kratie','11':'Mondulkiri',
+  '12':'Phnom Penh','13':'Preah Vihear','14':'Prey Veng','15':'Pursat','16':'Ratanakiri','17':'Siem Reap',
+  '18':'Preah Sihanouk','19':'Stung Treng','20':'Svay Rieng','21':'Takeo','22':'Oddar Meanchey','23':'Kep',
+  '24':'Pailin','25':'Tbong Khmum'
+};
+const CODES = {
+  product:{PEL:'Personal loan'},
+  enqType:{NA:'New application'},
+  accType:{S:'Single',J:'Joint'},
+  role:{P:'Principal',G:'Guarantor'},
+  idType:{N:'National ID',P:'Passport'},
+  gender:{M:'Male',F:'Female'},
+  marital:{S:'Single',M:'Married',D:'Divorced',W:'Widowed'},
+  status:{C:'Closed',N:'Normal',W:'Written off'},
+  freq:{M:'Monthly',W:'Weekly',Q:'Quarterly',Y:'Yearly'},
+  yn:{Y:'Yes',N:'No',YES:'Yes',NO:'No'},
+  addrType:{RESID:'Residential',WORK:'Work'},
+  country:{KHM:'Cambodia'},
+  advisory:{NOADV:'No advisory messages'}
+};
+const LABELS = {
+  ENQUIRY_TYPE:'Enquiry type',REPORT_DATE:'Report date',ENQUIRY_NO:'Enquiry no.',PRODUCT_TYPE:'Product',
+  NO_OF_APPLICANTS:'Applicants',ACCOUNT_TYPE:'Account type',ENQUIRY_REFERENCE:'Reference',AMOUNT:'Amount',CURRENCY:'Currency',
+  CA_CAD1E:'Address detail 1',CA_CAD2E:'Address detail 2',CA_CAD3E:'Address detail 3',CA_CAD4E:'Address detail 4',
+  ANM_CNM2E:'Name part 3',ANM_CNM3E:'Name part 4',ANM_CNM7E:'Name part 5'
+};
+function decode(dict, v){
+  if (!v) return '';
+  if (dict === 'prov') return PROVINCES[String(v).padStart(2,'0')] || v;
+  const d = CODES[dict];
+  return (d && d[String(v).toUpperCase()]) || v;
+}
+
+/* ---------------- helpers ---------------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clean = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+const kids = el => el ? Array.from(el.children) : [];
+const child = (el, tag) => kids(el).find(c => c.tagName === tag) || null;
+const childText = (el, tag) => { const c = child(el, tag); return c ? clean(c.textContent) : ''; };
+function flat(el, out = {}){
+  if (!el) return out;
+  for (const c of kids(el)){
+    if (c.children.length){ flat(c, out); continue; }
+    const k = c.tagName, v = clean(c.textContent);
+    if (!(k in out)) out[k] = v;
+    else if (v) out[k] = out[k] ? out[k] + '; ' + v : v;
+  }
+  return out;
+}
+const groupRows = (C, g, r) => { const grp = child(C, g); return grp ? kids(grp).filter(x => x.tagName === r).map(x => flat(x)) : []; };
+function num(s){
+  if (s == null || s === '') return null;
+  const n = Number(String(s).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+function parseDMY(s){
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(s || '').trim());
+  return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : null;
+}
+const DAY = 86400000;
+function fullYears(fromMs, toMs){
+  if (fromMs == null || toMs == null) return null;
+  const a = new Date(fromMs), b = new Date(toMs);
+  let y = b.getUTCFullYear() - a.getUTCFullYear();
+  if (b.getUTCMonth() < a.getUTCMonth() || (b.getUTCMonth() === a.getUTCMonth() && b.getUTCDate() < a.getUTCDate())) y--;
+  return y;
+}
+function fmtNum(n, cur){
+  const dec = cur === 'KHR' ? 0 : 2;
+  return n.toLocaleString('en-US', {minimumFractionDigits: Number.isInteger(n) && cur === 'KHR' ? 0 : dec, maximumFractionDigits: 2});
+}
+function fmtMoney(n, cur){
+  if (n == null) return '';
+  if (n === 0) return '0' + (cur ? ' ' + cur : '');
+  return fmtNum(n, cur) + (cur ? ' ' + cur : '');
+}
+const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
+const codeTag = c => c ? `<span class="code">${esc(c)}</span>` : '';
+
+/* ---------------- reading the file ---------------- */
+function decodeBuffer(buf){
+  const b = new Uint8Array(buf);
+  if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(b.subarray(2));
+  if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(b.subarray(2));
+  const n = Math.min(b.length, 4000); let zeros = 0;
+  for (let i = 1; i < n; i += 2) if (b[i] === 0) zeros++;
+  if (n > 40 && zeros > n / 4) return new TextDecoder('utf-16le').decode(b);
+  return new TextDecoder('utf-8').decode(b);
+}
+function unescapeEntities(t){
+  return t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+}
+function extractChunks(text){
+  for (const re of [/<RESPONSE\b[\s\S]*?<\/RESPONSE>/g, /<ITEM\b[\s\S]*?<\/ITEM>/g, /<RSP_REPORT\b[\s\S]*?<\/RSP_REPORT>/g]){
+    const m = text.match(re);
+    if (m && m.length) return m;
+  }
+  return [];
+}
+function parseXml(s){
+  const d = new DOMParser().parseFromString(s, 'application/xml');
+  return d.getElementsByTagName('parsererror').length ? null : d;
+}
+const HANDLED = new Set(['CAPL','CID','PROVIDED','AVAILABLE','ADDITIONAL_NAMES','PREV_ENQUIRIES','ACC_DETAILS','ADDRESSES','EMPLOYERS','ADVISORY_SUMMARY_TEXT','SUMMARY','SCORE']);
+function genericSection(e){
+  const ks = kids(e), tags = new Set(ks.map(k => k.tagName));
+  if (ks.length && tags.size === 1 && ks[0].children.length) return {tag: e.tagName, rows: ks.map(k => flat(k))};
+  return {tag: e.tagName, kv: ks.length ? flat(e) : {[e.tagName]: clean(e.textContent)}};
+}
+function totals(summary, g, curTag, amtTag){
+  return kids(summary).filter(t => t.tagName === g).map(t => ({cur: childText(t, curTag), amt: num(childText(t, amtTag))}));
+}
+function buildReports(R){
+  const meta = {}; const extraTop = [];
+  for (const c of kids(R)){
+    if (!c.children.length) meta[c.tagName] = clean(c.textContent);
+    else if (c.tagName !== 'CONSUMER' && c.tagName !== 'DISCLAIMER') extraTop.push(genericSection(c));
+  }
+  const disclaimer = clean(child(R, 'DISCLAIMER')?.textContent);
+  const consumers = kids(R).filter(c => c.tagName === 'CONSUMER');
+  if (!consumers.length) consumers.push(null);
+  return consumers.map(C => {
+    const P = Object.assign(flat(child(C, 'CID')), flat(child(C, 'PROVIDED')));
+    const A = flat(child(C, 'AVAILABLE'));
+    const g = (pk, ak) => P[pk] || A[ak] || '';
+    const S = child(C, 'SUMMARY');
+    const r = {
+      meta, disclaimer, el: R, P, A,
+      capl: childText(C, 'CAPL'),
+      id: {
+        family: g('PCNMFE','ACNMFE'), given: g('PCNM1E','ACNM1E'), dob: g('PCDOB','ACDOB'),
+        gender: g('PCGND','ACGND'), marital: g('PCMAR','ACMAR'), nat: g('PCNAT','ACNAT'),
+        pobProv: g('PCPLBP','ACPLBP'), pobCountry: g('PCPLBC','ACPLBC'),
+        idType: g('CID1','ACID1'), idNo: g('CID2','ACID2'), idExp: g('CID3','ACID3'), email: g('PCEML','ACEML')
+      },
+      names: groupRows(C, 'ADDITIONAL_NAMES', 'ADDITIONAL_NAME'),
+      enquiries: groupRows(C, 'PREV_ENQUIRIES', 'PREV_ENQUIRY'),
+      accounts: groupRows(C, 'ACC_DETAILS', 'ACC_DETAIL'),
+      addresses: groupRows(C, 'ADDRESSES', 'ADDRESS'),
+      employers: groupRows(C, 'EMPLOYERS', 'EMPLOYER'),
+      advisory: kids(child(C, 'ADVISORY_SUMMARY_TEXT')).map(e => clean(e.textContent)).filter(Boolean),
+      summary: flat(S),
+      tot: {
+        lim: totals(S, 'TOT_LIMITS', 'TOT_LIM_CURR', 'TOT_LIM'),
+        liab: totals(S, 'TOT_LIABILITIES', 'TOT_LIAB_CURR', 'TOT_LIAB'),
+        wo: totals(S, 'TOT_WO_AMT', 'TOT_WO_CURR', 'TOT_WO'),
+        woOs: totals(S, 'TOT_WO_OS_BALANCE', 'TOT_WO_OS_CURR', 'TOT_WO_OS_BAL'),
+        glim: totals(S, 'TOT_GLIMITS', 'TOT_GLIM_CURR', 'TOT_GLIM'),
+        gliab: totals(S, 'TOT_GLIABILITIES', 'TOT_GLIAB_CURR', 'TOT_GLIAB')
+      },
+      score: flat(child(C, 'SCORE')),
+      others: extraTop.concat(kids(C).filter(e => !HANDLED.has(e.tagName)).map(genericSection))
+    };
+    r.name = [r.id.family, r.id.given].filter(Boolean).join(' ') || 'Unnamed applicant';
+    derive(r);
+    return r;
+  });
+}
+function derive(r){
+  const rd = parseDMY(r.meta.REPORT_DATE);
+  r.reportMs = rd;
+  r.age = fullYears(parseDMY(r.id.dob), rd);
+  const win = {d30:0, d90:0, d365:0};
+  const lenders = new Map();
+  for (const e of r.enquiries){
+    const d = parseDMY(e.PE_DATE);
+    if (rd != null && d != null){
+      const diff = (rd - d) / DAY;
+      if (diff >= 0 && diff <= 30) win.d30++;
+      if (diff >= 0 && diff <= 90) win.d90++;
+      if (diff >= 0 && diff <= 365) win.d365++;
+    }
+    const L = e.PE_ENQR || 'Unknown lender';
+    lenders.set(L, (lenders.get(L) || 0) + 1);
+  }
+  r.win = win;
+  r.lenders = [...lenders.entries()].sort((a, b) => b[1] - a[1]);
+  const first = parseDMY(r.summary.EISDT);
+  r.historyMonths = (first != null && rd != null) ? Math.max(0, Math.floor((rd - first) / DAY / 30.44)) : null;
+  const sortDesc = (rows, k) => rows.sort((a, b) => (parseDMY(b[k]) ?? -Infinity) - (parseDMY(a[k]) ?? -Infinity));
+  sortDesc(r.enquiries, 'PE_DATE'); sortDesc(r.accounts, 'ACC_ISSU_DT'); sortDesc(r.employers, 'EDLD'); sortDesc(r.addresses, 'CA_LOAD_DT');
+  const sc = r.score.SC_ERROR;
+  if (sc){
+    const m = /^(\S+)\s*-\s*(.*)$/.exec(sc);
+    r.scoreText = m ? `No score · ${m[1]}: ${m[2]}` : `No score · ${sc}`;
+    r.scoreTone = 'warn';
+  } else {
+    const parts = Object.entries(r.score).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
+    r.scoreText = parts.length ? parts.join(' · ') : 'No score section in this report';
+    r.scoreTone = parts.length ? '' : 'warn';
+  }
+  r.idChecks = ID_PAIRS.map(([l, pk, ak, dict]) => {
+    const a = r.P[pk] || '', b = r.A[ak] || '';
+    if (!a && !b) return null;
+    return {l, pk, ak, a: dict ? decode(dict, a) : a, b: dict ? decode(dict, b) : b, diff: !!(a && b && a.toUpperCase() !== b.toUpperCase()), gap: !a || !b};
+  }).filter(Boolean);
+  r.idDiffs = r.idChecks.filter(x => x.diff).length;
+  r.overdue = r.accounts.some(a => (num(a.ACC_ODB) || 0) > 0);
+}
+const ID_PAIRS = [
+  ['Family name','PCNMFE','ACNMFE'], ['Given name','PCNM1E','ACNM1E'], ['Date of birth','PCDOB','ACDOB'],
+  ['Gender','PCGND','ACGND','gender'], ['Marital status','PCMAR','ACMAR','marital'], ['Nationality','PCNAT','ACNAT','country'],
+  ['Birth province','PCPLBP','ACPLBP','prov'], ['Birth country','PCPLBC','ACPLBC','country'],
+  ['ID type','CID1','ACID1','idType'], ['ID number','CID2','ACID2'], ['ID expiry','CID3','ACID3'], ['Email','PCEML','ACEML']
+];
+
+function parseText(text, fileName){
+  const reports = [], issues = [];
+  let t = text.replace(/¶/g, '');
+  if (!/<(RESPONSE|RSP_REPORT)\b/.test(t) && /&lt;(RESPONSE|RSP_REPORT)\b/.test(t)) t = unescapeEntities(t);
+  const chunks = extractChunks(t);
+  if (!chunks.length){
+    issues.push(`<b>${esc(fileName)}</b>: no Credit Bureau XML found. The reader looks for &lt;RESPONSE&gt; or &lt;RSP_REPORT&gt; blocks.`);
+    return {reports, issues};
+  }
+  const opened = (t.match(/<RESPONSE\b/g) || []).length;
+  if (chunks[0].startsWith('<RESPONSE') && opened > chunks.length){
+    issues.push(`<b>${esc(fileName)}</b>: ${plural(opened - chunks.length, 'record')} ${opened - chunks.length === 1 ? 'is' : 'are'} cut off (no closing tag) and couldn’t be read. Ask the sender for a full export.`);
+  }
+  chunks.forEach((ch, i) => {
+    let doc = parseXml(ch);
+    if (!doc && ch.includes('""')) doc = parseXml(ch.replace(/""/g, '"'));
+    if (!doc){ issues.push(`<b>${esc(fileName)}</b>, record ${i + 1}: the XML is damaged or incomplete, so it was skipped.`); return; }
+    const reps = Array.from(doc.getElementsByTagName('RSP_REPORT'));
+    if (!reps.length){
+      const status = clean(doc.getElementsByTagName('STATUS')[0]?.textContent);
+      const errs = Array.from(doc.getElementsByTagName('*')).filter(e => /ERR|ERROR/.test(e.tagName) && !e.children.length && clean(e.textContent)).map(e => `${e.tagName} ${clean(e.textContent)}`);
+      issues.push(`<b>${esc(fileName)}</b>, record ${i + 1}: the bureau returned no report${status ? ` (status ${esc(status)})` : ''}${errs.length ? ': ' + esc(errs.join('; ')) : ''}.`);
+      return;
+    }
+    reps.forEach(R => buildReports(R).forEach(rep => { rep.file = fileName; rep.row = i + 1; reports.push(rep); }));
+  });
+  return {reports, issues};
+}
+
+/* ---------------- state ---------------- */
+const state = {reports: [], issues: [], sel: 0, sample: true, fileNames: [], query: ''};
+const copyFns = {};
+
+function load(parts, sample = false){
+  const reports = [], issues = [];
+  for (const p of parts){ const res = parseText(p.text, p.name); reports.push(...res.reports); issues.push(...res.issues); }
+  state.reports = reports; state.issues = issues; state.sel = 0; state.sample = sample;
+  state.fileNames = parts.map(p => p.name); state.query = ''; $('#search').value = '';
+  accPrefs.excluded.clear();
+  renderAll();
+  if (!sample) window.scrollTo({top: 0});
+}
+async function loadFiles(fileList){
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const parts = [];
+  for (const f of files){
+    try { parts.push({name: f.name, text: decodeBuffer(await f.arrayBuffer())}); }
+    catch (e){ parts.push({name: f.name, text: ''}); }
+  }
+  load(parts);
+  const n = state.reports.length;
+  toast(n ? `Read ${plural(n, 'report')}` : 'No reports could be read from that file');
+}
+
+/* ---------------- column definitions ---------------- */
+const COLS = {
+  enquiries: [
+    {k:'PE_DATE', l:'Date'},
+    {k:'PE_ENQR', l:'Lender'},
+    {k:'PE_PRD', l:'Product', code:'product'},
+    {k:'PE_AMOUNT', l:'Amount', money:'PE_CURR'},
+    {k:'PE_TYPE', l:'Enquiry type', code:'enqType'},
+    {k:'PE_ACCT', l:'Account type', code:'accType'},
+    {k:'PE_APPL', l:'Role', code:'role'},
+    {k:'PE_NMFE', l:'Name as sent', join:['PE_NMFE','PE_NM1E']},
+    {k:'PE_MEMB_REF', l:'Lender reference', mono:true}
+  ],
+  employers: [
+    {k:'EDLD', l:'Reported'},
+    {k:'ENME', l:'Employer'},
+    {k:'EOCE', l:'Occupation'},
+    {k:'ETMS', l:'Monthly income', money:'ECURR'},
+    {k:'ELEN', l:'Length (months)', numeric:true},
+    {k:'ESLF', l:'Self-employed', code:'yn'},
+    {k:'ETYP', l:'Employer type'},
+    {k:'EA_PROV', l:'Work province', code:'prov'},
+    {k:'EA_VILL', l:'District · commune · village', geo:'EA_', uses:['EA_CADT','EA_AD9']}
+  ],
+  addresses: [
+    {k:'CA_LOAD_DT', l:'Reported'},
+    {k:'CA_CADT', l:'Type', code:'addrType'},
+    {k:'CA_PROV', l:'Province', code:'prov'},
+    {k:'CA_VILL', l:'District · commune · village', geo:'CA_'},
+    {k:'CA_CAD9', l:'Country', code:'country'}
+  ],
+  names: [
+    {k:'ANM_CNMFE', l:'Name on file', join:['ANM_CNMFE','ANM_CNM1E','ANM_CNM2E','ANM_CNM3E','ANM_CNM7E']},
+    {k:'ANM_LOAD_DT', l:'Reported'}
+  ],
+  accounts: [
+    {k:'ACC_LIMIT', l:'Loan amount / limit', money:'ACC_CURR'},
+    {k:'ACC_INSTL', l:'Installment', money:'ACC_CURR'},
+    {k:'ACC_TNR', l:'Tenor', numeric:true},
+    {k:'ACC_FRQ', l:'Frequency', code:'freq'},
+    {k:'ACC_ISSU_DT', l:'Opened'},
+    {k:'ACC_PROD_EXP_DT', l:'Maturity'},
+    {k:'ACC_CLSD_DT', l:'Closed'},
+    {k:'ACC_CUB', l:'Current balance', money:'ACC_CURR'},
+    {k:'ACC_ODB', l:'Overdue balance', money:'ACC_CURR', alert:true},
+    {k:'ACC_LAST_AMT_PD', l:'Last payment', money:'ACC_CURR'},
+    {k:'ACC_LAST_PAY_DT', l:'Last payment date'},
+    {k:'ACC_NXT_DU_DT', l:'Next due'},
+    {k:'ACC_AS_OF_DT', l:'Data as of'},
+    {k:'ACC_SEC', l:'Collateral', code:'yn'},
+    {k:'ACC_RST_LOAN', l:'Restructured', code:'yn'},
+    {k:'ACC_CAPL', l:'Role', code:'role'},
+    {k:'ACC_LOAN_TYPE', l:'Account type', code:'accType'},
+    {k:'ACC_SUMMRY', l:'Account summary codes', mono:true},
+    {k:'ACC_GRP_REF', l:'Group reference', opt:true},
+    {k:'ACC_ADV_MSGS', l:'Advisory messages', opt:true}
+  ]
+};
+const ACC_HEAD = [
+  {k:'ACC_CRDTR', l:'Lender'}, {k:'ACC_PRD', l:'Product', code:'product'},
+  {k:'ACC_ACC_NO', l:'Account no.', mono:true}, {k:'ACC_STATUS', l:'Status', code:'status'}, {k:'ACC_CURR', l:'Currency'}
+];
+function keysOf(c){
+  const ks = [c.k, ...(c.uses || [])];
+  if (c.money) ks.push(c.money);
+  if (c.join) ks.push(...c.join);
+  if (c.geo) ks.push(c.geo + 'DIST', c.geo + 'COMM', c.geo + 'VILL');
+  return ks;
+}
+function withExtras(rows, cols){
+  const used = new Set(cols.flatMap(keysOf));
+  const extra = [];
+  for (const row of rows) for (const k of Object.keys(row)) if (!used.has(k) && row[k]){ used.add(k); extra.push({k, l: LABELS[k] || k}); }
+  return cols.concat(extra);
+}
+function cell(row, c){
+  if (c.join) return {text: c.join.map(k => row[k]).filter(Boolean).join(' ')};
+  if (c.geo) return {text: ['DIST','COMM','VILL'].map(s => row[c.geo + s]).filter(Boolean).join(' · '), mono: true};
+  const raw = row[c.k] ?? '';
+  if (c.money){ const n = num(raw); return {text: n == null ? '' : fmtMoney(n, row[c.money]), num: n, isNum: true}; }
+  if (c.code) return {text: decode(c.code, raw), title: raw};
+  if (c.numeric) return {text: raw, num: num(raw), isNum: true};
+  return {text: raw, mono: c.mono};
+}
+const colCodes = c => keysOf(c).filter(Boolean).join(', ');
+
+function tableHtml(rows, cols, key){
+  const all = withExtras(rows, cols);
+  copyFns[key] = () => [all.map(c => c.l).join('\t')].concat(rows.map(r => all.map(c => cell(r, c).text.replace(/\t/g, ' ')).join('\t'))).join('\n');
+  const head = all.map(c => `<th${c.money || c.numeric ? ' class="num"' : ''} title="${esc(colCodes(c))}">${esc(c.l)}${codeTag(colCodes(c))}</th>`).join('');
+  const body = rows.map(r => '<tr>' + all.map(c => {
+    const v = cell(r, c);
+    const cls = [v.isNum ? 'num' : '', v.mono ? 'mono' : '', v.text ? '' : 'dim'].filter(Boolean).join(' ');
+    return `<td${cls ? ` class="${cls}"` : ''}${v.title && v.title !== v.text ? ` title="Code ${esc(v.title)}"` : ''}>${v.text ? esc(v.text) : '—'}</td>`;
+  }).join('') + '</tr>').join('');
+  return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* ---------------- rendering ---------------- */
+function totalsText(list){
+  const xs = list.filter(t => t.amt != null);
+  if (!xs.length) return '—';
+  const nz = xs.filter(t => t.amt !== 0);
+  return (nz.length ? nz : [xs[0]]).map(t => fmtMoney(t.amt, t.cur)).join(' + ');
+}
+const anyPositive = list => list.some(t => (t.amt || 0) > 0);
+
+function renderAll(){
+  renderIntake(); renderIssues(); renderIndex(); renderReport();
+  $('#layout').classList.toggle('single', state.reports.length < 2);
+}
+function renderIntake(){
+  const m = $('#intakeMsg');
+  if (state.sample){
+    m.innerHTML = `<span class="tag">Example</span><strong>Two invented applicants are shown.</strong> Open your file to read your own reports.`;
+  } else {
+    const files = state.fileNames.length === 1 ? esc(state.fileNames[0]) : `${state.fileNames.length} files`;
+    m.innerHTML = `<span class="tag ok">Loaded</span><strong>${files}</strong><span>${plural(state.reports.length, 'report')}</span>`;
+  }
+}
+function renderIssues(){
+  const box = $('#issues');
+  box.hidden = !state.issues.length;
+  box.innerHTML = state.issues.map(s => `<div>${s}</div>`).join('');
+}
+function matches(r, q){
+  if (!q) return true;
+  const hay = [r.name, r.id.idNo, r.meta.ENQUIRY_REFERENCE, r.meta.ENQUIRY_NO, r.id.given + ' ' + r.id.family].join(' ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).every(w => hay.includes(w));
+}
+function renderIndex(){
+  const list = $('#list');
+  $('#indexCount').textContent = state.reports.length ? String(state.reports.length) : '';
+  const items = state.reports.map((r, i) => ({r, i})).filter(x => matches(x.r, state.query));
+  if (!items.length){ list.innerHTML = `<div class="none">No applicant matches “${esc(state.query)}”.</div>`; return; }
+  list.innerHTML = items.map(({r, i}) => {
+    const acc = num(r.summary.CNT_ACC) ?? r.accounts.length;
+    return `<button class="item" type="button" data-i="${i}" aria-current="${i === state.sel}">
+      <span class="nm">${esc(r.name)}</span><span class="n">#${r.row}</span>
+      <span class="sub">${esc(r.id.idNo || 'No ID')} · ${esc(r.meta.REPORT_DATE || '—')}<br>${plural(acc, 'account')} · ${plural(r.enquiries.length, 'enquiry', 'enquiries')}</span>
+    </button>`;
+  }).join('');
+}
+
+function tile(lab, code, val, sub, tone = ''){
+  return `<div class="tile ${tone}"><div class="lab">${esc(lab)}${codeTag(code)}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`;
+}
+function block(title, count, body, opts = {}){
+  const tools = opts.copy ? `<button class="btn small" type="button" data-copy="${opts.copy}">Copy table</button>` : '';
+  return `<section class="sheet block"><header><h3>${esc(title)}${count != null ? ` <span class="count">${count}</span>` : ''}${codeTag(opts.code)}</h3>${opts.right || ''}<div class="tools">${tools}</div></header>${body}</section>`;
+}
+
+function renderReport(){
+  const host = $('#report');
+  for (const k in copyFns) delete copyFns[k];
+  const r = state.reports[state.sel];
+  if (!r){
+    host.innerHTML = `<div class="sheet blank"><h2>No reports to show</h2><p>Open a .txt export from the credit bureau, or paste its text into this page.</p></div>`;
+    return;
+  }
+  const I = r.id, S = r.summary, M = r.meta;
+  const n = k => num(S[k]) ?? 0;
+
+  /* identity header */
+  const facts = [
+    I.idNo && `<span>${esc(decode('idType', I.idType) || 'ID')} <b>${esc(I.idNo)}</b>${I.idExp ? ` · expires ${esc(I.idExp)}` : ''}</span>`,
+    I.dob && `<span>Born <b>${esc(I.dob)}</b>${r.age != null ? ` · ${r.age} at report` : ''}</span>`,
+    I.gender && `<span>${esc(decode('gender', I.gender))}</span>`,
+    I.marital && `<span>${esc(decode('marital', I.marital))}</span>`,
+    I.nat && `<span>Nationality ${esc(decode('country', I.nat))}</span>`,
+    I.pobProv && `<span>Birthplace ${esc(decode('prov', I.pobProv))}</span>`
+  ].filter(Boolean).join('');
+  const amt = num(M.AMOUNT);
+  const refs = [
+    ['Report date', M.REPORT_DATE], ['Enquiry no.', M.ENQUIRY_NO], ['Reference', M.ENQUIRY_REFERENCE],
+    ['Amount applied', amt != null ? fmtMoney(amt, M.CURRENCY) : ''], ['Product', decode('product', M.PRODUCT_TYPE)],
+    ['Enquiry type', decode('enqType', M.ENQUIRY_TYPE)], ['Role', decode('role', r.capl)], ['Record in file', `#${r.row}`]
+  ].filter(x => x[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+
+  const pills = [];
+  pills.push(`<span class="pill ${r.scoreTone}"><span class="dot"></span>${esc(r.scoreText)}</span>`);
+  const adv = r.advisory.map(a => decode('advisory', a));
+  if (adv.length) pills.push(`<span class="pill ${r.advisory.every(a => a === 'NOADV') ? 'good' : 'warn'}"><span class="dot"></span>${esc(adv.join('; '))}</span>`);
+  if (r.idChecks.length) pills.push(r.idDiffs
+    ? `<span class="pill warn"><span class="dot"></span>${r.idDiffs === 1 ? '1 detail differs' : r.idDiffs + ' details differ'} from the bureau record</span>`
+    : `<span class="pill good"><span class="dot"></span>Details match the bureau record</span>`);
+  if (n('CNT_ACC_WRO') > 0) pills.push(`<span class="pill bad"><span class="dot"></span>Has written-off accounts</span>`);
+  else if (n('CNT_ACC_DELQ') > 0 || r.overdue) pills.push(`<span class="pill warn"><span class="dot"></span>Delinquent or overdue account</span>`);
+
+  const head = `<section class="sheet idhead">
+    <div class="who"><p class="eyebrow">Applicant</p><h2>${esc(r.name)}</h2><div class="facts">${facts}</div></div>
+    <dl class="refs">${refs}</dl>
+    <div class="statusline">${pills.join('')}</div>
+  </section>`;
+
+  /* tiles */
+  const totalAcc = num(S.CNT_ACC) ?? r.accounts.length;
+  const breakdown = [`${n('CNT_ACC_NORM')} normal`, `${n('CNT_ACC_DELQ')} delinquent`, `${n('CNT_ACC_CLO')} closed`, `${n('CNT_ACC_WRO')} written off`].join(' · ');
+  const gacc = n('CNT_GACC');
+  const tiles = [
+    tile('Loan accounts', 'CNT_ACC', esc(totalAcc), esc(breakdown) + (gacc ? `<br>${plural(gacc, 'account')} as guarantor` : ''), n('CNT_ACC_WRO') ? 'bad' : (n('CNT_ACC_DELQ') ? 'warn' : '')),
+    tile('Outstanding', 'TOT_LIAB', totalsText(r.tot.liab).split(' + ').map(esc).join('<br>'), `Total limits ${esc(totalsText(r.tot.lim))}`, totalsText(r.tot.liab).includes(' + ') ? 'multi' : ''),
+    tile('Written off', 'TOT_WO', esc(totalsText(r.tot.wo)), `Still owed ${esc(totalsText(r.tot.woOs))}`, anyPositive(r.tot.wo) ? 'bad' : ''),
+    tile('Enquiries', 'CNT_PE', esc(num(S.CNT_PE) ?? r.enquiries.length), `${r.win.d30} in 30 days · ${r.win.d90} in 90 · ${r.win.d365} in 12 months`, r.win.d30 >= 3 ? 'warn' : ''),
+    tile('First account', 'EISDT', esc(S.EISDT || '—'), r.historyMonths != null ? `${plural(r.historyMonths, 'month')} of history at report` : 'No accounts on file')
+  ].join('');
+  const tilesHtml = `<section class="sheet tiles" aria-label="Summary">${tiles}</section>`;
+
+  /* accounts: filled by renderAccounts so the filters can redraw just this section */
+  const accHtml = `<section class="sheet block" id="accBlock"></section>`;
+
+  /* enquiries */
+  const lenderChips = r.lenders.map(([l, c]) => `<span class="chip">${esc(l)} <b>×${c}</b></span>`).join('');
+  const velocity = `<span class="chip${r.win.d30 >= 3 ? ' hot' : ''}">Last 30 days <b>${r.win.d30}</b></span><span class="chip">90 days <b>${r.win.d90}</b></span><span class="chip">12 months <b>${r.win.d365}</b></span>`;
+  const enqHtml = block('Enquiry history', r.enquiries.length,
+    r.enquiries.length ? `<div class="chips">${velocity}${lenderChips}</div>${tableHtml(r.enquiries, COLS.enquiries, 'enq')}` : `<p class="empty">No earlier enquiries.</p>`,
+    {copy: r.enquiries.length ? 'enq' : '', code: 'PREV_ENQUIRIES'});
+
+  const empHtml = block('Employment', r.employers.length,
+    r.employers.length ? tableHtml(r.employers, COLS.employers, 'emp') : `<p class="empty">No employment records.</p>`,
+    {copy: r.employers.length ? 'emp' : '', code: 'EMPLOYERS'});
+
+  const addrHtml = block('Addresses', r.addresses.length,
+    r.addresses.length ? tableHtml(r.addresses, COLS.addresses, 'addr') : `<p class="empty">No addresses on file.</p>`,
+    {copy: r.addresses.length ? 'addr' : '', code: 'ADDRESSES'});
+
+  const namesHtml = r.names.length ? block('Other names on file', r.names.length, tableHtml(r.names, COLS.names, 'names'), {code: 'ADDITIONAL_NAMES'}) : '';
+
+  /* identity check */
+  const idRows = r.idChecks.map(x => `<tr class="${x.diff ? 'diff' : ''}"><td>${esc(x.l)}${codeTag(x.pk + ' / ' + x.ak)}</td><td${x.a ? '' : ' class="dim"'}>${esc(x.a || 'Not sent')}</td><td${x.b ? '' : ' class="dim"'}>${esc(x.b || 'Not on file')}</td></tr>`).join('');
+  const idHtml = r.idChecks.length ? block('Identity check', null,
+    `<div class="tablewrap"><table><thead><tr><th>Detail</th><th title="PROVIDED">Sent by the lender</th><th title="AVAILABLE">On the bureau file</th></tr></thead><tbody>${idRows}</tbody></table></div>`,
+    {right: r.idDiffs ? `<span class="pill warn"><span class="dot"></span>${plural(r.idDiffs, 'difference')}</span>` : `<span class="pill good"><span class="dot"></span>All match</span>`}) : '';
+
+  /* anything else in the XML */
+  const otherHtml = r.others.map((o, j) => {
+    if (o.rows) return block(LABELS[o.tag] || o.tag, o.rows.length, tableHtml(o.rows, [], 'other' + j), {copy: 'other' + j});
+    const kv = Object.entries(o.kv).map(([k, v]) => `<div><dt>${esc(LABELS[k] || k)}</dt><dd${v ? '' : ' class="dim"'}>${v ? esc(v) : '—'}</dd></div>`).join('');
+    return block(LABELS[o.tag] || o.tag, null, `<dl class="kv" style="padding:16px 20px">${kv}</dl>`);
+  }).join('');
+
+  const raw = `<details class="sheet raw" id="raw"><summary>Original XML</summary><div class="rawtools"><button class="btn small" type="button" data-copy="xml">Copy XML</button></div><pre class="xml" id="xmlPre"></pre></details>`;
+  copyFns.xml = () => pretty(r.el, 0);
+
+  host.innerHTML = head + tilesHtml + accHtml + enqHtml + empHtml + addrHtml + idHtml + namesHtml + otherHtml + raw +
+    (r.disclaimer ? `<p class="disclaimer">${esc(r.disclaimer)}</p>` : '');
+  renderAccounts(r);
+}
+
+/* ---------------- loan accounts: bank filter, status filter, totals ---------------- */
+const accPrefs = {excluded: new Set(), activeOnly: false, totals: true};
+try {
+  const s = JSON.parse(localStorage.getItem('cbc-acc') || '{}');
+  if (typeof s.activeOnly === 'boolean') accPrefs.activeOnly = s.activeOnly;
+  if (typeof s.totals === 'boolean') accPrefs.totals = s.totals;
+} catch (e) {}
+function saveAccPrefs(){ try { localStorage.setItem('cbc-acc', JSON.stringify({activeOnly: accPrefs.activeOnly, totals: accPrefs.totals})); } catch (e) {} }
+const isClosed = a => a.ACC_STATUS === 'C' || !!a.ACC_CLSD_DT;
+const bankOf = a => a.ACC_CRDTR || 'Unknown lender';
+function sumBy(accts, key){
+  const m = new Map();
+  for (const a of accts){
+    const v = num(a[key]); if (v == null) continue;
+    const c = a.ACC_CURR || '';
+    m.set(c, Math.round(((m.get(c) || 0) + v) * 100) / 100);
+  }
+  return m;
+}
+function sumHtml(m, sep = '<br>'){
+  if (!m.size) return '—';
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([c, v]) => esc(fmtMoney(v, c))).join(sep);
+}
+function tot(lab, code, val, sub = '', tone = ''){
+  return `<div class="tot ${tone}"><div class="lab">${esc(lab)}${codeTag(code)}</div><div class="val">${val}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+}
+function accCard(a, cols){
+  const st = a.ACC_STATUS;
+  const tone = st === 'W' ? 'bad' : st === 'N' ? 'good' : '';
+  const od = num(a.ACC_ODB) || 0;
+  const kv = cols.filter(c => !ACC_HEAD.includes(c)).map(c => {
+    const v = cell(a, c);
+    if (c.opt && !v.text) return '';
+    const cls = [v.mono || c.mono ? 'mono' : '', !v.text ? 'dim' : '', c.alert && (v.num || 0) > 0 ? 'warn' : ''].filter(Boolean).join(' ');
+    return `<div><dt title="${esc(colCodes(c))}">${esc(c.l)}${codeTag(colCodes(c))}</dt><dd${cls ? ` class="${cls}"` : ''}>${v.text ? esc(v.text) : '—'}</dd></div>`;
+  }).join('');
+  return `<article class="acct">
+    <div class="acct-head">
+      <div><div class="lender">Account ${esc(a.ACC_ACC_NO || '—')}</div><div class="meta">${esc(decode('product', a.ACC_PRD))} · ${esc(a.ACC_CURR || '')} · opened ${esc(a.ACC_ISSU_DT || '—')}</div></div>
+      <div class="tools"><span class="pill ${tone}" title="Code ${esc(st)}"><span class="dot"></span>${esc(decode('status', st) || 'Status unknown')}</span>${od > 0 ? `<span class="pill warn"><span class="dot"></span>Overdue ${esc(fmtMoney(od, a.ACC_CURR))}</span>` : ''}</div>
+    </div>
+    <dl class="kv">${kv}</dl>
+  </article>`;
+}
+function renderAccounts(r){
+  const box = $('#accBlock'); if (!box) return;
+  const focusId = box.contains(document.activeElement) ? document.activeElement.id : '';
+  const all = r.accounts;
+  const cols = withExtras(all, ACC_HEAD.concat(COLS.accounts));
+  const statusOk = a => !accPrefs.activeOnly || !isClosed(a);
+  const banks = [...new Set(all.map(bankOf))].sort((a, b) => a.localeCompare(b));
+  const selected = banks.filter(b => !accPrefs.excluded.has(b));
+  const shown = all.filter(a => statusOk(a) && !accPrefs.excluded.has(bankOf(a)));
+  const activeCount = all.filter(a => !isClosed(a)).length;
+  copyFns.acc = () => [cols.map(c => c.l).join('\t')].concat(shown.map(a => cols.map(c => cell(a, c).text).join('\t'))).join('\n');
+
+  const countTxt = shown.length === all.length ? String(all.length) : `${shown.length} of ${all.length}`;
+  let html = `<header><h3>Loan accounts <span class="count">${countTxt}</span>${codeTag('ACC_DETAILS')}</h3><div class="tools">${shown.length ? `<button class="btn small" type="button" data-copy="acc">Copy table</button>` : ''}</div></header>`;
+  if (!all.length){ box.innerHTML = html + `<p class="empty">No loan accounts on the bureau file.</p>`; return; }
+
+  const chips = banks.map((b, i) => {
+    const n = all.filter(a => bankOf(a) === b && statusOk(a)).length;
+    return `<label class="bchip" for="bank-${i}"><input type="checkbox" id="bank-${i}" data-bank="${esc(b)}"${accPrefs.excluded.has(b) ? '' : ' checked'}><span>${esc(b)}</span><b>${n}</b></label>`;
+  }).join('');
+  html += `<div class="acc-controls">
+    <div class="ctl">
+      <div class="ctl-label"><span>Banks</span><span class="ctl-n">${selected.length} of ${banks.length} selected</span>
+        <button class="link" type="button" id="bank-all" data-bank-all>Select all</button><button class="link" type="button" id="bank-none" data-bank-none>Clear</button></div>
+      <div class="bankchips" role="group" aria-label="Filter loan accounts by bank">${chips}</div>
+    </div>
+    <div class="ctl-row">
+      <div class="seg" role="radiogroup" aria-label="Loan status">
+        <label for="st-all"><input type="radio" name="accStatus" id="st-all" value="all"${accPrefs.activeOnly ? '' : ' checked'}>All loans <b>${all.length}</b></label>
+        <label for="st-active" title="Accounts not marked as closed"><input type="radio" name="accStatus" id="st-active" value="active"${accPrefs.activeOnly ? ' checked' : ''}>Active only <b>${activeCount}</b></label>
+      </div>
+      <label class="switch" for="accTotals"><input type="checkbox" id="accTotals"${accPrefs.totals ? ' checked' : ''}> Show totals</label>
+    </div>
+  </div>`;
+
+  if (!shown.length){
+    const why = [];
+    if (selected.length < banks.length) why.push(selected.length ? `${plural(banks.length - selected.length, 'bank')} unselected` : 'no banks selected');
+    if (accPrefs.activeOnly) why.push('Active only is on');
+    html += `<div class="empty">No accounts match${why.length ? ` (${why.join(', ')})` : ''}. <button class="link" type="button" id="acc-reset" data-acc-reset>Show all loans</button></div>`;
+  } else {
+    if (accPrefs.totals){
+      const od = sumBy(shown, 'ACC_ODB');
+      const closedShown = shown.filter(isClosed).length;
+      html += `<div class="totals" aria-label="Totals for the accounts shown">
+        ${tot('Accounts', '', String(shown.length), `at ${plural(new Set(shown.map(bankOf)).size, 'bank')}`)}
+        ${tot('Loan Amount', 'ACC_LIMIT', sumHtml(sumBy(shown, 'ACC_LIMIT')))}
+        ${tot('Total installment', 'ACC_INSTL', sumHtml(sumBy(shown, 'ACC_INSTL')))}
+        ${tot('Outstanding Balance', 'ACC_CUB', sumHtml(sumBy(shown, 'ACC_CUB')))}
+        ${[...od.values()].some(v => v > 0) ? tot('Overdue', 'ACC_ODB', sumHtml(od), '', 'warn') : ''}
+      </div>`;
+      const notes = [];
+      if (closedShown) notes.push(`These totals include ${plural(closedShown, 'closed loan')}. Choose Active only to see current obligations.`);
+      if (new Set(shown.map(a => a.ACC_CURR || '')).size > 1) notes.push('Each currency is totalled separately.');
+      if (notes.length) html += `<p class="totnote">${notes.join(' ')}</p>`;
+    }
+    html += selected.map(b => [b, shown.filter(a => bankOf(a) === b)]).filter(([, xs]) => xs.length).map(([b, xs]) => {
+      const act = xs.filter(a => !isClosed(a)).length;
+      const sub = accPrefs.totals ? `<dl class="bg-tot">
+        <div><dt>Loan Amount</dt><dd>${sumHtml(sumBy(xs, 'ACC_LIMIT'), ' + ')}</dd></div>
+        <div><dt>Installment</dt><dd>${sumHtml(sumBy(xs, 'ACC_INSTL'), ' + ')}</dd></div>
+        <div><dt>Outstanding Balance</dt><dd>${sumHtml(sumBy(xs, 'ACC_CUB'), ' + ')}</dd></div></dl>` : '';
+      return `<div class="bankgroup">
+        <div class="bg-head"><div><h4>${esc(b)}</h4><div class="meta">${plural(xs.length, 'account')} · ${act} active</div></div>${sub}</div>
+        <div class="accts tight">${xs.map(a => accCard(a, cols)).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+  box.innerHTML = html;
+  if (focusId){ const el = document.getElementById(focusId); if (el) el.focus(); }
+}
+
+function pretty(node, depth){
+  const pad = '  '.repeat(depth);
+  const attrs = Array.from(node.attributes || []).map(a => ` ${a.name}="${esc(a.value)}"`).join('');
+  const ch = kids(node);
+  if (!ch.length){
+    const t = clean(node.textContent);
+    return t ? `${pad}<${node.tagName}${attrs}>${esc(t)}</${node.tagName}>` : `${pad}<${node.tagName}${attrs} />`;
+  }
+  return `${pad}<${node.tagName}${attrs}>\n${ch.map(c => pretty(c, depth + 1)).join('\n')}\n${pad}</${node.tagName}>`;
+}
+
+/* ---------------- copy, toast ---------------- */
+let toastTimer;
+function toast(msg){
+  let t = $('.toast');
+  if (!t){ t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove(); return ok;
+}
+function copyText(text, okMsg){
+  const done = () => toast(okMsg);
+  const fail = () => fallbackCopy(text) ? done() : toast('Copy isn’t allowed here. Use Export to Excel instead.');
+  try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
+}
+
+/* ---------------- Excel export ---------------- */
+let downloads = null;
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => res(); s.onerror = () => rej(new Error('the spreadsheet library didn’t load'));
+    document.head.appendChild(s);
+  });
+}
+function exportRows(r, rows, cols){
+  const all = withExtras(rows, cols);
+  return rows.map(row => {
+    const o = {'Record': r.row, 'Applicant': r.name, 'ID number': r.id.idNo};
+    for (const c of all){
+      if (c.money){ o[c.l] = num(row[c.k]); if (c.money !== 'ACC_CURR') o[c.l + ' currency'] = row[c.money] || ''; }
+      else if (c.geo){ o['District code'] = row[c.geo + 'DIST'] || ''; o['Commune code'] = row[c.geo + 'COMM'] || ''; o['Village code'] = row[c.geo + 'VILL'] || ''; }
+      else { const v = cell(row, c); o[c.l] = c.numeric ? v.num : v.text; }
+    }
+    return o;
+  });
+}
+function overviewRow(r){
+  const S = r.summary, M = r.meta, I = r.id;
+  const one = list => { const xs = list.filter(t => t.amt != null); return xs.length === 1 ? [xs[0].amt, xs[0].cur] : [totalsText(list), '']; };
+  const [liab, liabCur] = one(r.tot.liab), [lim, limCur] = one(r.tot.lim), [wo, woCur] = one(r.tot.wo);
+  return {
+    'Record': r.row, 'File': r.file, 'Report date': M.REPORT_DATE, 'Enquiry no.': M.ENQUIRY_NO, 'Reference': M.ENQUIRY_REFERENCE,
+    'Family name': I.family, 'Given name': I.given, 'ID type': decode('idType', I.idType), 'ID number': I.idNo, 'ID expiry': I.idExp,
+    'Date of birth': I.dob, 'Age at report': r.age, 'Gender': decode('gender', I.gender), 'Marital status': decode('marital', I.marital),
+    'Nationality': decode('country', I.nat), 'Birth province': decode('prov', I.pobProv),
+    'Amount applied': num(M.AMOUNT), 'Applied currency': M.CURRENCY, 'Product': decode('product', M.PRODUCT_TYPE),
+    'Accounts': num(S.CNT_ACC), 'Normal': num(S.CNT_ACC_NORM), 'Delinquent': num(S.CNT_ACC_DELQ), 'Closed': num(S.CNT_ACC_CLO),
+    'Rejected': num(S.CNT_ACC_REJ), 'Written off': num(S.CNT_ACC_WRO), 'Accounts as guarantor': num(S.CNT_GACC),
+    'Total limits': lim, 'Limits currency': limCur, 'Outstanding': liab, 'Outstanding currency': liabCur,
+    'Written-off amount': wo, 'Written-off currency': woCur,
+    'Enquiries': num(S.CNT_PE), 'Enquiries 30 days': r.win.d30, 'Enquiries 90 days': r.win.d90, 'Enquiries 12 months': r.win.d365,
+    'First account opened': S.EISDT, 'Score / message': r.scoreText, 'Advisory': r.advisory.map(a => decode('advisory', a)).join('; '),
+    'Identity differences': r.idDiffs
+  };
+}
+function sheetFrom(rows){
+  const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{Note: 'No records'}]);
+  const keys = rows.length ? Array.from(new Set(rows.flatMap(Object.keys))) : ['Note'];
+  ws['!cols'] = keys.map(k => ({wch: Math.min(42, Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2)}));
+  return ws;
+}
+async function doExport(){
+  const btn = $('#export');
+  if (!downloads || !state.reports.length) return;
+  btn.disabled = true; btn.textContent = 'Preparing…';
+  try {
+    await loadXLSX();
+    const R = state.reports;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheetFrom(R.map(overviewRow)), 'Overview');
+    XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.accounts, ACC_HEAD.concat(COLS.accounts)))), 'Loan accounts');
+    XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.enquiries, COLS.enquiries))), 'Enquiries');
+    XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.employers, COLS.employers))), 'Employment');
+    XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.addresses, COLS.addresses))), 'Addresses');
+    const buf = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
+    const base = state.sample ? 'CBC_example' : (state.fileNames[0] || 'CBC_reports').replace(/\.[^.]+$/, '');
+    await downloads.save({filename: `${base}_readable.xlsx`, data: buf});
+    toast('Excel file saved');
+  } catch (e){
+    const code = e && e.code;
+    if (code === 'declined') toast('Download cancelled');
+    else if (code === 'rate_limited') toast('A download prompt is already open');
+    else if (['unavailable','not_granted','capability_disabled','capability_removed','extension_not_enabled'].includes(code)){ btn.hidden = true; toast('Downloads aren’t available here. Use Copy table on each section instead.'); }
+    else toast('Couldn’t build the Excel file: ' + ((e && e.message) || 'unknown error'));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Export to Excel';
+  }
+}
+
+/* ---------------- events ---------------- */
+$('#open').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => { loadFiles(e.target.files); e.target.value = ''; });
+$('#export').addEventListener('click', doExport);
+$('#search').addEventListener('input', e => { state.query = e.target.value.trim(); renderIndex(); });
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('.item'); if (!b) return;
+  state.sel = +b.dataset.i; renderIndex(); renderReport();
+  if (window.matchMedia('(max-width: 900px)').matches) $('#report').scrollIntoView({behavior: 'smooth', block: 'start'});
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-copy]'); if (!b) return;
+  const fn = copyFns[b.dataset.copy]; if (!fn) return;
+  copyText(fn(), b.dataset.copy === 'xml' ? 'XML copied' : 'Table copied. Paste it into Excel.');
+});
+$('#report').addEventListener('change', e => {
+  const t = e.target, r = state.reports[state.sel];
+  if (!r) return;
+  if (t.dataset.bank != null){ if (t.checked) accPrefs.excluded.delete(t.dataset.bank); else accPrefs.excluded.add(t.dataset.bank); }
+  else if (t.name === 'accStatus'){ accPrefs.activeOnly = t.value === 'active'; saveAccPrefs(); }
+  else if (t.id === 'accTotals'){ accPrefs.totals = t.checked; saveAccPrefs(); }
+  else return;
+  renderAccounts(r);
+});
+$('#report').addEventListener('click', e => {
+  const r = state.reports[state.sel];
+  if (!r) return;
+  if (e.target.closest('[data-bank-all]')) r.accounts.forEach(a => accPrefs.excluded.delete(bankOf(a)));
+  else if (e.target.closest('[data-bank-none]')) r.accounts.forEach(a => accPrefs.excluded.add(bankOf(a)));
+  else if (e.target.closest('[data-acc-reset]')){ accPrefs.excluded.clear(); accPrefs.activeOnly = false; saveAccPrefs(); }
+  else return;
+  renderAccounts(r);
+});
+document.addEventListener('toggle', e => {
+  if (e.target.id === 'raw' && e.target.open){
+    const r = state.reports[state.sel], pre = $('#xmlPre');
+    if (r && pre && !pre.textContent) pre.textContent = pretty(r.el, 0);
+  }
+}, true);
+const codesBox = $('#codes');
+try { codesBox.checked = localStorage.getItem('cbc-codes') === '1'; } catch (e) {}
+document.body.classList.toggle('codes', codesBox.checked);
+codesBox.addEventListener('change', () => {
+  document.body.classList.toggle('codes', codesBox.checked);
+  try { localStorage.setItem('cbc-codes', codesBox.checked ? '1' : '0'); } catch (e) {}
+});
+
+let dragDepth = 0;
+const hasFiles = e => Array.from(e.dataTransfer?.types || []).includes('Files');
+window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+window.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) document.body.classList.remove('dragging'); });
+window.addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); loadFiles(e.dataTransfer.files); });
+document.addEventListener('paste', e => {
+  const t = e.clipboardData && e.clipboardData.getData('text');
+  if (t && /(<|&lt;)(RESPONSE|RSP_REPORT)\b/.test(t)){
+    e.preventDefault(); load([{name: 'Pasted text', text: t}]);
+    toast(state.reports.length ? `Read ${plural(state.reports.length, 'report')}` : 'No reports found in the pasted text');
+  }
+});
+
+/* ---------------- start ---------------- */
+load([{name: 'Example', text: SAMPLE}], true);
+(async () => {
+  let inFrame = true;
+  try { inFrame = window.self !== window.top; } catch (e) {}
+  if (inFrame){
+    /* inside the Claude artifact viewer: saves go through the downloads capability */
+    try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+  } else {
+    /* opened directly (local file, GitHub Pages): an ordinary browser download */
+    downloads = {save: async ({filename, data}) => {
+      const url = URL.createObjectURL(new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return {status: 'saved'};
+    }};
+  }
+  $('#export').hidden = !downloads;
+})();
+})();
+</script>
+</body>
+</html>
