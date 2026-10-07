@@ -759,7 +759,6 @@ const anyPositive = list => list.some(t => (t.amt || 0) > 0);
 
 function renderAll(){
   renderIntake(); renderIssues(); renderIndex(); renderReport();
-  $('#layout').classList.toggle('single', state.reports.length < 2);
 }
 function renderIntake(){
   const m = $('#intakeMsg');
