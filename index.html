@@ -336,6 +336,18 @@ const CODES = {
   country:{KHM:'Cambodia'},
   advisory:{NOADV:'No advisory messages'}
 };
+/* CBC collateral codes (ACC_SEC). Shown as "Text (CODE)"; an unlisted code is shown as-is. */
+const COLLATERAL = {
+  CA:'Cash', GI:'Guarantor', MO:'Mortgage', NO:'Unsecured', OT:'Others', SH:'Shares', MP:'Multiple',
+  FD:'Fixed Deposit', LT:'Land – Hard Title Deed', TO:'Soft Title Deed', FB:'Floating Debenture',
+  MV:'Motor Vehicle', IN:'Inventory'
+};
+function collateralText(v){
+  return String(v).split(/[,;/\s]+/).filter(Boolean).map(c => {
+    const t = COLLATERAL[c.toUpperCase()];
+    return t ? `${t} (${c.toUpperCase()})` : c;
+  }).join(', ');
+}
 const LABELS = {
   ENQUIRY_TYPE:'Enquiry type',REPORT_DATE:'Report date',ENQUIRY_NO:'Enquiry no.',PRODUCT_TYPE:'Product',
   NO_OF_APPLICANTS:'Applicants',ACCOUNT_TYPE:'Account type',ENQUIRY_REFERENCE:'Reference',AMOUNT:'Amount',CURRENCY:'Currency',
@@ -345,6 +357,7 @@ const LABELS = {
 function decode(dict, v){
   if (!v) return '';
   if (dict === 'prov') return PROVINCES[String(v).padStart(2,'0')] || v;
+  if (dict === 'collateral') return collateralText(v);
   const d = CODES[dict];
   return (d && d[String(v).toUpperCase()]) || v;
 }
@@ -699,7 +712,7 @@ const COLS = {
     {k:'ACC_LAST_PAY_DT', l:'Last payment date'},
     {k:'ACC_NXT_DU_DT', l:'Next due'},
     {k:'ACC_AS_OF_DT', l:'Data as of'},
-    {k:'ACC_SEC', l:'Collateral', code:'yn'},
+    {k:'ACC_SEC', l:'Collateral', code:'collateral'},
     {k:'ACC_RST_LOAN', l:'Restructured', code:'yn'},
     {k:'ACC_CAPL', l:'Role', code:'role'},
     {k:'ACC_LOAN_TYPE', l:'Account type', code:'accType'},
