@@ -15,6 +15,8 @@
   --paper:#F2F4F1; --sheet:#FFFFFF; --ink:#17222A; --muted:#5A6970; --rule:#D8DED9; --tint:#E9EEEA;
   --accent:#0D6A65; --accent-ink:#FFFFFF; --accent-soft:#D9ECE8;
   --good:#2E7449; --good-soft:#E0F0E5; --warn:#8F5600; --warn-soft:#FAEBD2; --bad:#B42318; --bad-soft:#FBE4E1;
+  --g-ee:#B42318; --g-dd:#B54708; --g-cc:#7A6A00; --g-bb:#3B7A1E; --g-aa:#17663A;
+  --ks-bar:linear-gradient(90deg,#A3161D 0%,#CF3A26 11%,#E5782A 26%,#E9B526 41%,#D2D232 55%,#8FC447 69%,#45A04B 84%,#15703A 100%);
   --f-display:"IBM Plex Sans Condensed","Noto Sans Khmer","Arial Narrow",sans-serif;
   --f-body:"IBM Plex Sans","Noto Sans Khmer",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -23,11 +25,13 @@
   --paper:#0F1518; --sheet:#162024; --ink:#E3E9E6; --muted:#93A3A9; --rule:#28343A; --tint:#1D292D;
   --accent:#5BC1B7; --accent-ink:#0A1A19; --accent-soft:#15332F;
   --good:#6FC794; --good-soft:#163222; --warn:#EFB45C; --warn-soft:#37290F; --bad:#F2887D; --bad-soft:#3B1916;
+  --g-ee:#F2887D; --g-dd:#F5A35C; --g-cc:#E2D25A; --g-bb:#9BD46F; --g-aa:#5CC98A;
   color-scheme:dark }}
 :root[data-theme="dark"]{
   --paper:#0F1518; --sheet:#162024; --ink:#E3E9E6; --muted:#93A3A9; --rule:#28343A; --tint:#1D292D;
   --accent:#5BC1B7; --accent-ink:#0A1A19; --accent-soft:#15332F;
   --good:#6FC794; --good-soft:#163222; --warn:#EFB45C; --warn-soft:#37290F; --bad:#F2887D; --bad-soft:#3B1916;
+  --g-ee:#F2887D; --g-dd:#F5A35C; --g-cc:#E2D25A; --g-bb:#9BD46F; --g-aa:#5CC98A;
   color-scheme:dark }
 
 *{box-sizing:border-box}
@@ -114,6 +118,50 @@ h1{font:600 22px/1.15 var(--f-display);margin:0;letter-spacing:.01em}
 .tile .val{font:600 27px/1.1 var(--f-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .tile .val small{font-size:14px;font-weight:500;color:var(--muted)}
 .tile .sub{font-size:12.5px;color:var(--muted)}
+/* K-Score panel (CBC layout: facts at left, score marker riding the EE..AA bar) */
+.ks-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;padding:12px 20px;border-bottom:1px solid var(--rule)}
+.ks-head h3{font:600 17px/1.2 var(--f-display);margin:0;letter-spacing:.01em}
+.ks-head span{font:500 12px var(--f-mono);color:var(--muted)}
+.ks-body{display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);gap:16px 28px;padding:18px 20px 14px;align-items:end}
+@media (max-width:680px){.ks-body{grid-template-columns:minmax(0,1fr)}}
+.ks-facts{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin:0;align-self:center;font-size:14px;align-items:center}
+.ks-facts dt{color:var(--muted)}
+.ks-facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.gchip{display:inline-block;font:700 13px/1 var(--f-display);letter-spacing:.06em;padding:4px 7px;border-radius:4px;border:1.5px solid var(--g);color:var(--g)}
+.ks-track{position:relative;padding-top:78px;min-width:0}
+.ks-track.nos{padding-top:0}
+.ks-pin{position:absolute;top:2px;bottom:24px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--sheet);z-index:1}
+.ks-num{position:absolute;top:-4px;left:12px;font:700 66px/1 var(--f-display);color:var(--g);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ks-pin.flip .ks-num{left:auto;right:12px}
+@media (max-width:680px){.ks-track{padding-top:62px}.ks-num{font-size:50px}}
+.ks-bar{height:42px;border-radius:4px;background-image:repeating-linear-gradient(90deg,transparent 0 7px,rgba(255,255,255,.2) 7px 8px),var(--ks-bar);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;text-align:center}
+.ks-bar span{font:700 17px/1 var(--f-display);letter-spacing:.06em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ks-ticks{position:relative;height:24px;font:500 12.5px/24px var(--f-mono);color:var(--muted)}
+.ks-ticks span{position:absolute;top:0;transform:translateX(-50%)}
+.ks-ticks span:first-child{transform:none}
+.ks-ticks span:last-child{transform:translateX(-100%)}
+.ks-track.nos .ks-bar{filter:grayscale(1);opacity:.4}
+.ks-se{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-bottom:14px}
+.ks-se .code{display:inline;font:700 54px/1 var(--f-display);color:var(--g);opacity:1;margin:0;letter-spacing:.01em}
+.ks-se p{margin:0;max-width:52ch;font-size:14.5px}
+.ks-se p b{display:block;font:600 12px/1.3 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--g)}
+details.ks-help{border-top:1px solid var(--rule)}
+details.ks-help > summary{cursor:pointer;padding:11px 20px;font:500 13.5px var(--f-body);color:var(--accent);list-style:none}
+details.ks-help > summary::-webkit-details-marker{display:none}
+details.ks-help > summary::before{content:"+ ";font-family:var(--f-mono)}
+details.ks-help[open] > summary::before{content:"− "}
+.ks-help-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px 28px;padding:4px 20px 16px}
+.ks-help-body > div{min-width:0;display:flex;flex-direction:column;gap:8px}
+.ks-help h4{font:600 12px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.ks-help p{margin:0;font-size:13.5px;max-width:60ch}
+.ks-help table{font-size:13px}
+.ks-help td,.ks-help th{padding:6px 10px;white-space:normal}
+.ks-help td:first-child,.ks-help th:first-child{padding-left:0}
+.ks-help tr.on td{background:var(--accent-soft);font-weight:600}
+.ks-help tr.on td:first-child{padding-left:8px}
+.ks-factors{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.ks-src{margin:0;padding:0 20px 14px;font-size:12px;color:var(--muted)}
+.gmini{font:600 11.5px/1 var(--f-mono);padding:4px 6px;border-radius:4px;border:1px solid var(--g);color:var(--g);white-space:nowrap}
 .tile.multi .val{font-size:20px;line-height:1.25}
 .tile.warn{background:var(--warn-soft)} .tile.warn .val{color:var(--warn)}
 .tile.bad{background:var(--bad-soft)} .tile.bad .val{color:var(--bad)}
@@ -262,7 +310,7 @@ const $ = (s, r = document) => r.querySelector(s);
 
 /* ---------------- example data (invented people, clearly labelled in the UI) ---------------- */
 const SAMPLE = `|xml_data|
-|<RESPONSE><SERVICE>ENQUIRYV6</SERVICE><ACTION>A_SC</ACTION><STATUS>OK</STATUS><HEADER><MEMBER_ID>00</MEMBER_ID><USER_ID>DEMO</USER_ID><RUN_NO>001</RUN_NO><TOT_ITEMS>1</TOT_ITEMS><ERR_ITEMS></ERR_ITEMS></HEADER><MESSAGE><ITEM><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><RSP_REPORT><ENQUIRY_TYPE>NA</ENQUIRY_TYPE><REPORT_DATE>15/08/2026</REPORT_DATE><ENQUIRY_NO>000000101</ENQUIRY_NO><PRODUCT_TYPE>PEL</PRODUCT_TYPE><NO_OF_APPLICANTS>1</NO_OF_APPLICANTS><ACCOUNT_TYPE>S</ACCOUNT_TYPE><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><AMOUNT>1500.00</AMOUNT><CURRENCY>USD</CURRENCY><CONSUMER><CAPL>P</CAPL><CID><CID1>N</CID1><CID2>000000001</CID2><CID3>30/06/2030</CID3></CID><PROVIDED><PCNAM><PCNMFE>SOK</PCNMFE><PCNM1E>DARA</PCNM1E></PCNAM><PCDOB>14/03/1993</PCDOB><PCPLB><PCPLBC>KHM</PCPLBC><PCPLBP>17</PCPLBP></PCPLB><PCGND>M</PCGND><PCMAR>M</PCMAR><PCNAT>KHM</PCNAT><PCEML /></PROVIDED><AVAILABLE><ACID><ACID1>N</ACID1><ACID2>000000001</ACID2><ACID3>30/06/2030</ACID3></ACID><ACNAM><ACNMFE>SOK</ACNMFE><ACNM1E>DARA</ACNM1E></ACNAM><ACDOB>14/03/1993</ACDOB><ACPLB><ACPLBC>KHM</ACPLBC><ACPLBP>17</ACPLBP></ACPLB><ACGND>M</ACGND><ACMAR>S</ACMAR><ACNAT>KHM</ACNAT><ACEML /></AVAILABLE><ADDITIONAL_NAMES><ADDITIONAL_NAME><ANM_CNMFE>DARA</ANM_CNMFE><ANM_CNM1E>SOK</ANM_CNM1E><ANM_LOAD_DT>02/05/2024</ANM_LOAD_DT></ADDITIONAL_NAME></ADDITIONAL_NAMES><PREV_ENQUIRIES><PREV_ENQUIRY><PE_DATE>28/07/2026</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0005</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>20/07/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0004</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1000.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>03/06/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0003</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>800.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>05/03/2026</PE_DATE><PE_ENQR>EXAMPLE FINANCE PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002B</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>2000000.00</PE_AMOUNT><PE_CURR>KHR</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>11/11/2025</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>02/05/2024</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0001A</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>600.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>DARA</PE_NMFE><PE_NM1E>SOK</PE_NM1E></PE_NAME></PREV_ENQUIRY></PREV_ENQUIRIES><ACC_DETAILS><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000003</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>1000.00</ACC_LIMIT><ACC_ISSU_DT>25/07/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>25/07/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>92.50</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD></ACC_LAST_AMT_PD><ACC_LAST_PAY_DT></ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>25/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE FINANCE PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000004</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>KHR</ACC_CURR><ACC_LIMIT>2000000.00</ACC_LIMIT><ACC_ISSU_DT>10/03/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/03/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>185000.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1150000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>185000.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>10/07/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>10/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE BANK PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000002</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>500.00</ACC_LIMIT><ACC_ISSU_DT>18/11/2025</ACC_ISSU_DT><ACC_PROD_EXP_DT>18/05/2026</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>15/05/2026</ACC_CLSD_DT><ACC_TNR>6</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>88.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>88.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>15/05/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000001</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>600.00</ACC_LIMIT><ACC_ISSU_DT>10/05/2024</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/05/2025</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>08/05/2025</ACC_CLSD_DT><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>55.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>55.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>08/05/2025</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2025</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL></ACC_DETAILS><ADDRESSES><ADDRESS><CA_LOAD_DT>28/07/2026</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1710</CA_DIST><CA_COMM>171005</CA_COMM><CA_VILL>17100502</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS><ADDRESS><CA_LOAD_DT>02/05/2024</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1704</CA_DIST><CA_COMM>170402</CA_COMM><CA_VILL>17040207</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS></ADDRESSES><EMPLOYERS><EMPLOYER><EDLD>28/07/2026</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>30</ELEN><ETMS>450.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER><EMPLOYER><EDLD>11/11/2025</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>22</ELEN><ETMS>400.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER></EMPLOYERS><ADVISORY_SUMMARY_TEXT><ADVISORY_TEXT>NOADV</ADVISORY_TEXT></ADVISORY_SUMMARY_TEXT><SUMMARY><CNT_PE>6</CNT_PE><CNT_MTDE>2</CNT_MTDE><CNT_ACC>4</CNT_ACC><CNT_ACC_NORM>2</CNT_ACC_NORM><CNT_ACC_DELQ>0</CNT_ACC_DELQ><CNT_ACC_CLO>2</CNT_ACC_CLO><CNT_ACC_REJ>0</CNT_ACC_REJ><CNT_ACC_WRO>0</CNT_ACC_WRO><CNT_GACC>0</CNT_GACC><CNT_GACC_NORM>0</CNT_GACC_NORM><CNT_GACC_DELQ>0</CNT_GACC_DELQ><CNT_GACC_ACC_CLO>0</CNT_GACC_ACC_CLO><CNT_GACC_REJ>0</CNT_GACC_REJ><CNT_GACC_WRO>0</CNT_GACC_WRO><EISDT>10/05/2024</EISDT><TOT_LIMITS><TOT_LIM_CURR>USD</TOT_LIM_CURR><TOT_LIM>2100.00</TOT_LIM></TOT_LIMITS><TOT_LIMITS><TOT_LIM_CURR>KHR</TOT_LIM_CURR><TOT_LIM>2000000.00</TOT_LIM></TOT_LIMITS><TOT_GLIMITS><TOT_GLIM_CURR /><TOT_GLIM>0.00</TOT_GLIM></TOT_GLIMITS><TOT_LIABILITIES><TOT_LIAB_CURR>USD</TOT_LIAB_CURR><TOT_LIAB>1000.00</TOT_LIAB></TOT_LIABILITIES><TOT_LIABILITIES><TOT_LIAB_CURR>KHR</TOT_LIAB_CURR><TOT_LIAB>1150000.00</TOT_LIAB></TOT_LIABILITIES><TOT_GLIABILITIES><TOT_GLIAB_CURR /><TOT_GLIAB>0.00</TOT_GLIAB></TOT_GLIABILITIES><TOT_WO_AMT><TOT_WO_CURR /><TOT_WO>0.00</TOT_WO></TOT_WO_AMT><TOT_GWO_AMT><TOT_GWO_CURR /><TOT_GWO>0.00</TOT_GWO></TOT_GWO_AMT><TOT_WO_OS_BALANCE><TOT_WO_OS_CURR /><TOT_WO_OS_BAL>0.00</TOT_WO_OS_BAL></TOT_WO_OS_BALANCE><TOT_GWO_OS_BALANCE><TOT_GWO_OS_CURR /><TOT_GWO_OS_BAL>0.00</TOT_GWO_OS_BAL></TOT_GWO_OS_BALANCE></SUMMARY></CONSUMER><DISCLAIMER><DI_TEXT>Example report. All people, lenders and numbers here are invented to show how the reader works.</DI_TEXT></DISCLAIMER></RSP_REPORT></ITEM></MESSAGE></RESPONSE>|
+|<RESPONSE><SERVICE>ENQUIRYV6</SERVICE><ACTION>A_SC</ACTION><STATUS>OK</STATUS><HEADER><MEMBER_ID>00</MEMBER_ID><USER_ID>DEMO</USER_ID><RUN_NO>001</RUN_NO><TOT_ITEMS>1</TOT_ITEMS><ERR_ITEMS></ERR_ITEMS></HEADER><MESSAGE><ITEM><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><RSP_REPORT><ENQUIRY_TYPE>NA</ENQUIRY_TYPE><REPORT_DATE>15/08/2026</REPORT_DATE><ENQUIRY_NO>000000101</ENQUIRY_NO><PRODUCT_TYPE>PEL</PRODUCT_TYPE><NO_OF_APPLICANTS>1</NO_OF_APPLICANTS><ACCOUNT_TYPE>S</ACCOUNT_TYPE><ENQUIRY_REFERENCE>DEMO_0001</ENQUIRY_REFERENCE><AMOUNT>1500.00</AMOUNT><CURRENCY>USD</CURRENCY><CONSUMER><CAPL>P</CAPL><CID><CID1>N</CID1><CID2>000000001</CID2><CID3>30/06/2030</CID3></CID><PROVIDED><PCNAM><PCNMFE>SOK</PCNMFE><PCNM1E>DARA</PCNM1E></PCNAM><PCDOB>14/03/1993</PCDOB><PCPLB><PCPLBC>KHM</PCPLBC><PCPLBP>17</PCPLBP></PCPLB><PCGND>M</PCGND><PCMAR>M</PCMAR><PCNAT>KHM</PCNAT><PCEML /></PROVIDED><AVAILABLE><ACID><ACID1>N</ACID1><ACID2>000000001</ACID2><ACID3>30/06/2030</ACID3></ACID><ACNAM><ACNMFE>SOK</ACNMFE><ACNM1E>DARA</ACNM1E></ACNAM><ACDOB>14/03/1993</ACDOB><ACPLB><ACPLBC>KHM</ACPLBC><ACPLBP>17</ACPLBP></ACPLB><ACGND>M</ACGND><ACMAR>S</ACMAR><ACNAT>KHM</ACNAT><ACEML /></AVAILABLE><ADDITIONAL_NAMES><ADDITIONAL_NAME><ANM_CNMFE>DARA</ANM_CNMFE><ANM_CNM1E>SOK</ANM_CNM1E><ANM_LOAD_DT>02/05/2024</ANM_LOAD_DT></ADDITIONAL_NAME></ADDITIONAL_NAMES><PREV_ENQUIRIES><PREV_ENQUIRY><PE_DATE>28/07/2026</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0005</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>20/07/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0004</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>1000.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>03/06/2026</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0003</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>800.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>05/03/2026</PE_DATE><PE_ENQR>EXAMPLE FINANCE PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002B</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>2000000.00</PE_AMOUNT><PE_CURR>KHR</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>11/11/2025</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0002</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>500.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>SOK</PE_NMFE><PE_NM1E>DARA</PE_NM1E></PE_NAME></PREV_ENQUIRY><PREV_ENQUIRY><PE_DATE>02/05/2024</PE_DATE><PE_ENQR>EXAMPLE MFI PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0001A</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>600.00</PE_AMOUNT><PE_CURR>USD</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>DARA</PE_NMFE><PE_NM1E>SOK</PE_NM1E></PE_NAME></PREV_ENQUIRY></PREV_ENQUIRIES><ACC_DETAILS><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000003</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>1000.00</ACC_LIMIT><ACC_ISSU_DT>25/07/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>25/07/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>92.50</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD></ACC_LAST_AMT_PD><ACC_LAST_PAY_DT></ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>25/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE FINANCE PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000004</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>KHR</ACC_CURR><ACC_LIMIT>2000000.00</ACC_LIMIT><ACC_ISSU_DT>10/03/2026</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/03/2027</ACC_PROD_EXP_DT><ACC_STATUS>N</ACC_STATUS><ACC_CLSD_DT /><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>185000.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>1150000.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>185000.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>10/07/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/07/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT>10/08/2026</ACC_NXT_DU_DT><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE BANK PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000002</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>500.00</ACC_LIMIT><ACC_ISSU_DT>18/11/2025</ACC_ISSU_DT><ACC_PROD_EXP_DT>18/05/2026</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>15/05/2026</ACC_CLSD_DT><ACC_TNR>6</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>88.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>88.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>15/05/2026</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2026</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL><ACC_DETAIL><ACC_CRDTR>EXAMPLE MFI PLC</ACC_CRDTR><ACC_PRD>PEL</ACC_PRD><ACC_GRP_REF /><ACC_ACC_NO>9000000001</ACC_ACC_NO><ACC_RST_LOAN>N</ACC_RST_LOAN><ACC_CURR>USD</ACC_CURR><ACC_LIMIT>600.00</ACC_LIMIT><ACC_ISSU_DT>10/05/2024</ACC_ISSU_DT><ACC_PROD_EXP_DT>10/05/2025</ACC_PROD_EXP_DT><ACC_STATUS>C</ACC_STATUS><ACC_CLSD_DT>08/05/2025</ACC_CLSD_DT><ACC_TNR>12</ACC_TNR><ACC_FRQ>M</ACC_FRQ><ACC_INSTL>55.00</ACC_INSTL><ACC_SEC>NO</ACC_SEC><ACC_CUB>0.00</ACC_CUB><ACC_ODB>0.00</ACC_ODB><ACC_LAST_AMT_PD>55.00</ACC_LAST_AMT_PD><ACC_LAST_PAY_DT>08/05/2025</ACC_LAST_PAY_DT><ACC_AS_OF_DT>31/05/2025</ACC_AS_OF_DT><ACC_NXT_DU_DT /><ACC_SUMMRY /><ACC_ADV_MSGS></ACC_ADV_MSGS><ACC_CAPL>P</ACC_CAPL><ACC_LOAN_TYPE>S</ACC_LOAN_TYPE></ACC_DETAIL></ACC_DETAILS><ADDRESSES><ADDRESS><CA_LOAD_DT>28/07/2026</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1710</CA_DIST><CA_COMM>171005</CA_COMM><CA_VILL>17100502</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS><ADDRESS><CA_LOAD_DT>02/05/2024</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>17</CA_PROV><CA_DIST>1704</CA_DIST><CA_COMM>170402</CA_COMM><CA_VILL>17040207</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS></ADDRESSES><EMPLOYERS><EMPLOYER><EDLD>28/07/2026</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>30</ELEN><ETMS>450.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER><EMPLOYER><EDLD>11/11/2025</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>22</ELEN><ETMS>400.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE TRADING CO</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>17</EA_PROV><EA_DIST>1710</EA_DIST><EA_COMM>171005</EA_COMM><EA_VILL>17100501</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER></EMPLOYERS><ADVISORY_SUMMARY_TEXT><ADVISORY_TEXT>NOADV</ADVISORY_TEXT></ADVISORY_SUMMARY_TEXT><SUMMARY><CNT_PE>6</CNT_PE><CNT_MTDE>2</CNT_MTDE><CNT_ACC>4</CNT_ACC><CNT_ACC_NORM>2</CNT_ACC_NORM><CNT_ACC_DELQ>0</CNT_ACC_DELQ><CNT_ACC_CLO>2</CNT_ACC_CLO><CNT_ACC_REJ>0</CNT_ACC_REJ><CNT_ACC_WRO>0</CNT_ACC_WRO><CNT_GACC>0</CNT_GACC><CNT_GACC_NORM>0</CNT_GACC_NORM><CNT_GACC_DELQ>0</CNT_GACC_DELQ><CNT_GACC_ACC_CLO>0</CNT_GACC_ACC_CLO><CNT_GACC_REJ>0</CNT_GACC_REJ><CNT_GACC_WRO>0</CNT_GACC_WRO><EISDT>10/05/2024</EISDT><TOT_LIMITS><TOT_LIM_CURR>USD</TOT_LIM_CURR><TOT_LIM>2100.00</TOT_LIM></TOT_LIMITS><TOT_LIMITS><TOT_LIM_CURR>KHR</TOT_LIM_CURR><TOT_LIM>2000000.00</TOT_LIM></TOT_LIMITS><TOT_GLIMITS><TOT_GLIM_CURR /><TOT_GLIM>0.00</TOT_GLIM></TOT_GLIMITS><TOT_LIABILITIES><TOT_LIAB_CURR>USD</TOT_LIAB_CURR><TOT_LIAB>1000.00</TOT_LIAB></TOT_LIABILITIES><TOT_LIABILITIES><TOT_LIAB_CURR>KHR</TOT_LIAB_CURR><TOT_LIAB>1150000.00</TOT_LIAB></TOT_LIABILITIES><TOT_GLIABILITIES><TOT_GLIAB_CURR /><TOT_GLIAB>0.00</TOT_GLIAB></TOT_GLIABILITIES><TOT_WO_AMT><TOT_WO_CURR /><TOT_WO>0.00</TOT_WO></TOT_WO_AMT><TOT_GWO_AMT><TOT_GWO_CURR /><TOT_GWO>0.00</TOT_GWO></TOT_GWO_AMT><TOT_WO_OS_BALANCE><TOT_WO_OS_CURR /><TOT_WO_OS_BAL>0.00</TOT_WO_OS_BAL></TOT_WO_OS_BALANCE><TOT_GWO_OS_BALANCE><TOT_GWO_OS_CURR /><TOT_GWO_OS_BAL>0.00</TOT_GWO_OS_BAL></TOT_GWO_OS_BALANCE></SUMMARY><SCORE><SC_SCORE>912</SC_SCORE><SC_SCORECARD /><SC_SCOREINDEX>4</SC_SCOREINDEX><SC_ODDS /><SC_BAD>0.85</SC_BAD><SC_MINIMUM>100</SC_MINIMUM><SC_MAXIMUM>1400</SC_MAXIMUM></SCORE></CONSUMER><DISCLAIMER><DI_TEXT>Example report. All people, lenders and numbers here are invented to show how the reader works.</DI_TEXT></DISCLAIMER></RSP_REPORT></ITEM></MESSAGE></RESPONSE>|
 |<RESPONSE><SERVICE>ENQUIRYV6</SERVICE><ACTION>A_SC</ACTION><STATUS>OK</STATUS><HEADER><MEMBER_ID>00</MEMBER_ID><USER_ID>DEMO</USER_ID><RUN_NO>001</RUN_NO><TOT_ITEMS>1</TOT_ITEMS><ERR_ITEMS></ERR_ITEMS></HEADER><MESSAGE><ITEM><ENQUIRY_REFERENCE>DEMO_0002</ENQUIRY_REFERENCE><RSP_REPORT><ENQUIRY_TYPE>NA</ENQUIRY_TYPE><REPORT_DATE>15/08/2026</REPORT_DATE><ENQUIRY_NO>000000102</ENQUIRY_NO><PRODUCT_TYPE>PEL</PRODUCT_TYPE><NO_OF_APPLICANTS>1</NO_OF_APPLICANTS><ACCOUNT_TYPE>S</ACCOUNT_TYPE><ENQUIRY_REFERENCE>DEMO_0002</ENQUIRY_REFERENCE><AMOUNT>300000.00</AMOUNT><CURRENCY>KHR</CURRENCY><CONSUMER><CAPL>P</CAPL><CID><CID1>N</CID1><CID2>000000002</CID2><CID3>12/02/2031</CID3></CID><PROVIDED><PCNAM><PCNMFE>KEO</PCNMFE><PCNM1E>CHANTHA</PCNM1E></PCNAM><PCDOB>22/09/2001</PCDOB><PCPLB><PCPLBC>KHM</PCPLBC><PCPLBP>12</PCPLBP></PCPLB><PCGND>F</PCGND><PCMAR>S</PCMAR><PCNAT>KHM</PCNAT><PCEML /></PROVIDED><AVAILABLE><ACID><ACID1>N</ACID1><ACID2>000000002</ACID2><ACID3>12/02/2031</ACID3></ACID><ACNAM><ACNMFE>KEO</ACNMFE><ACNM1E>CHANTHA</ACNM1E></ACNAM><ACDOB>22/09/2001</ACDOB><ACPLB><ACPLBC>KHM</ACPLBC><ACPLBP>12</ACPLBP></ACPLB><ACGND>F</ACGND><ACMAR>S</ACMAR><ACNAT>KHM</ACNAT><ACEML /></AVAILABLE><PREV_ENQUIRIES><PREV_ENQUIRY><PE_DATE>01/03/2026</PE_DATE><PE_ENQR>EXAMPLE BANK PLC</PE_ENQR><PE_TYPE>NA</PE_TYPE><PE_ACCT>S</PE_ACCT><PE_MEMB_REF>DEMO_0010</PE_MEMB_REF><PE_PRD>PEL</PE_PRD><PE_AMOUNT>300000.00</PE_AMOUNT><PE_CURR>KHR</PE_CURR><PE_APPL>P</PE_APPL><PE_NAME><PE_NMFE>KEO</PE_NMFE><PE_NM1E>CHANTHA</PE_NM1E></PE_NAME></PREV_ENQUIRY></PREV_ENQUIRIES><ADDRESSES><ADDRESS><CA_LOAD_DT>01/03/2026</CA_LOAD_DT><CA_CADT>RESID</CA_CADT><CA_PROV>12</CA_PROV><CA_DIST>1209</CA_DIST><CA_COMM>120903</CA_COMM><CA_VILL>12090304</CA_VILL><CA_CAD9>KHM</CA_CAD9></ADDRESS></ADDRESSES><EMPLOYERS><EMPLOYER><EDLD>01/03/2026</EDLD><ETYP>C</ETYP><ESLF>N</ESLF><EOCE>EMPLOYEE</EOCE><ELEN>14</ELEN><ETMS>320.00</ETMS><ECURR>USD</ECURR><ENME>EXAMPLE GARMENT FACTORY</ENME><EADR><EA_CADT>WORK</EA_CADT><EA_PROV>08</EA_PROV><EA_DIST>0811</EA_DIST><EA_COMM>081102</EA_COMM><EA_VILL>08110205</EA_VILL><EA_AD9>KHM</EA_AD9></EADR></EMPLOYER></EMPLOYERS><ADVISORY_SUMMARY_TEXT><ADVISORY_TEXT>NOADV</ADVISORY_TEXT></ADVISORY_SUMMARY_TEXT><SUMMARY><CNT_PE>1</CNT_PE><CNT_MTDE>0</CNT_MTDE><CNT_ACC>0</CNT_ACC><CNT_ACC_NORM>0</CNT_ACC_NORM><CNT_ACC_DELQ>0</CNT_ACC_DELQ><CNT_ACC_CLO>0</CNT_ACC_CLO><CNT_ACC_REJ>0</CNT_ACC_REJ><CNT_ACC_WRO>0</CNT_ACC_WRO><CNT_GACC>0</CNT_GACC><EISDT /><TOT_LIMITS><TOT_LIM_CURR /><TOT_LIM>0.00</TOT_LIM></TOT_LIMITS><TOT_LIABILITIES><TOT_LIAB_CURR /><TOT_LIAB>0.00</TOT_LIAB></TOT_LIABILITIES><TOT_WO_AMT><TOT_WO_CURR /><TOT_WO>0.00</TOT_WO></TOT_WO_AMT><TOT_WO_OS_BALANCE><TOT_WO_OS_CURR /><TOT_WO_OS_BAL>0.00</TOT_WO_OS_BAL></TOT_WO_OS_BALANCE></SUMMARY><SCORE><SC_ERROR>SE3   - Applicant has no primary accounts or no valid repayment status</SC_ERROR></SCORE></CONSUMER><DISCLAIMER><DI_TEXT>Example report. All people, lenders and numbers here are invented to show how the reader works.</DI_TEXT></DISCLAIMER></RSP_REPORT></ITEM></MESSAGE></RESPONSE>|`;
 
 /* ---------------- dictionaries ---------------- */
@@ -449,16 +497,7 @@ function derive(r){
   r.historyMonths = (first != null && rd != null) ? Math.max(0, Math.floor((rd - first) / DAY / 30.44)) : null;
   const sortDesc = (rows, k) => rows.sort((a, b) => (parseDMY(b[k]) ?? -Infinity) - (parseDMY(a[k]) ?? -Infinity));
   sortDesc(r.enquiries, 'PE_DATE'); sortDesc(r.accounts, 'ACC_ISSU_DT'); sortDesc(r.employers, 'EDLD'); sortDesc(r.addresses, 'CA_LOAD_DT');
-  const sc = r.score.SC_ERROR;
-  if (sc){
-    const m = /^(\S+)\s*-\s*(.*)$/.exec(sc);
-    r.scoreText = m ? `No score · ${m[1]}: ${m[2]}` : `No score · ${sc}`;
-    r.scoreTone = 'warn';
-  } else {
-    const parts = Object.entries(r.score).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
-    r.scoreText = parts.length ? parts.join(' · ') : 'No score section in this report';
-    r.scoreTone = parts.length ? '' : 'warn';
-  }
+  r.k = kscoreOf(r.score);
   r.idChecks = ID_PAIRS.map(([l, pk, ak, dict]) => {
     const a = r.P[pk] || '', b = r.A[ak] || '';
     if (!a && !b) return null;
@@ -466,6 +505,88 @@ function derive(r){
   }).filter(Boolean);
   r.idDiffs = r.idChecks.filter(x => x.diff).length;
   r.overdue = r.accounts.some(a => (num(a.ACC_ODB) || 0) > 0);
+}
+/* K-Score: grade bands and SE codes as published in CBC's guide to reading K-Score */
+const KS_GRADES = [
+  {g:'EE', lo:100, hi:580}, {g:'DD', lo:581, hi:700}, {g:'CC', lo:701, hi:850}, {g:'BB', lo:851, hi:1020}, {g:'AA', lo:1021, hi:1400}
+];
+const KS_TICKS = [100, 580, 700, 850, 1020, 1400];
+const SE_CODES = {
+  SE1: 'Individual has no information with the bureau',
+  SE2: 'Individual’s age is under 18 or over 80',
+  SE3: 'Individual has no primary account or no valid repayment status',
+  SE4: 'Individual has no active information on the bureau in any currency',
+  SE5: 'Individual is deceased',
+  SE6: 'Individual’s latest payment status is 90+ days past due within the last 30 days',
+  SE7: 'Individual’s debt is written off and there is no active account'
+};
+const SE_SERIOUS = new Set(['SE5', 'SE6', 'SE7']);
+const gradeOf = s => (KS_GRADES.find(x => s <= x.hi) || KS_GRADES[4]).g;
+function ksPos(s){
+  const t = KS_TICKS;
+  if (s <= t[0]) return 0;
+  if (s >= t[5]) return 100;
+  for (let i = 0; i < 5; i++) if (s <= t[i + 1]) return (i + (s - t[i]) / (t[i + 1] - t[i])) * 20;
+  return 100;
+}
+function kscoreOf(sc){
+  const k = {score: null, grade: '', pos: null, bad: num(sc.SC_BAD), code: '', reason: '', color: 'var(--muted)', text: ''};
+  const raw = sc.SC_SCORE != null && sc.SC_SCORE !== '' ? num(sc.SC_SCORE) : null;
+  if (sc.SC_ERROR){
+    const m = /^(SE\s*\d+)\s*-?\s*(.*)$/i.exec(sc.SC_ERROR);
+    k.code = m ? m[1].replace(/\s+/g, '').toUpperCase() : 'No score';
+    k.reason = SE_CODES[k.code] || (m ? m[2] : sc.SC_ERROR);
+    k.color = SE_SERIOUS.has(k.code) ? 'var(--bad)' : 'var(--warn)';
+    k.text = `No K-Score · ${k.code}: ${k.reason}`;
+  } else if (raw != null){
+    k.score = raw; k.grade = gradeOf(raw); k.pos = ksPos(raw); k.color = `var(--g-${k.grade.toLowerCase()})`;
+    k.text = `K-Score ${raw} · grade ${k.grade}` + (k.bad != null ? ` · bad rate ${fmtPct(k.bad)}` : '');
+  } else {
+    k.code = '—'; k.reason = 'This report has no score section.'; k.color = 'var(--muted)'; k.text = 'No score section in this report';
+  }
+  return k;
+}
+const fmtPct = v => v.toLocaleString('en-US', {maximumFractionDigits: 2}) + '%';
+let ksHelpOpen = false;
+function ksHtml(r){
+  const k = r.k;
+  const has = k.score != null;
+  const facts = `<dl class="ks-facts">
+    <dt>Risk grade${codeTag('SC_SCOREINDEX')}</dt><dd>${has ? `<span class="gchip">${k.grade}</span>` : '—'}</dd>
+    <dt>K-Score${codeTag('SC_SCORE')}</dt><dd>${has ? esc(k.score) : 'Not available'}</dd>
+    <dt>Bad rate${codeTag('SC_BAD')}</dt><dd>${k.bad != null ? esc(fmtPct(k.bad)) : '—'}</dd>
+  </dl>`;
+  const bands = `<div class="ks-bar" aria-hidden="true">${KS_GRADES.map(x => `<span>${x.g}</span>`).join('')}</div>
+    <div class="ks-ticks" aria-hidden="true">${KS_TICKS.map((t, i) => `<span style="left:${i * 20}%">${t}</span>`).join('')}</div>`;
+  const track = has
+    ? `<div class="ks-track" role="img" aria-label="K-Score ${k.score}, risk grade ${k.grade}, on a scale from 100 to 1400">
+        <div class="ks-pin${k.pos > 58 ? ' flip' : ''}" style="left:${k.pos.toFixed(2)}%"><span class="ks-num">${esc(k.score)}</span></div>${bands}</div>`
+    : `<div class="ks-track nos"><div class="ks-se"><span class="code">${esc(k.code)}</span><p><b>No K-Score</b>${esc(k.reason)}</p></div>${bands}</div>`;
+  const gradeRows = KS_GRADES.slice().reverse().map(x => `<tr${x.g === k.grade ? ' class="on"' : ''}><td>${x.g}</td><td>${x.lo} – ${x.hi}</td></tr>`).join('');
+  const seRows = Object.entries(SE_CODES).map(([c, t]) => `<tr${c === k.code ? ' class="on"' : ''}><td>${c}</td><td>${esc(t)}</td></tr>`).join('');
+  const help = `<details class="ks-help" id="ksHelp"${ksHelpOpen ? ' open' : ''}><summary>How to read K-Score</summary>
+    <div class="ks-help-body">
+      <div><h4>Risk grades</h4>
+        <table><thead><tr><th>Grade</th><th>Score range</th></tr></thead><tbody>${gradeRows}</tbody></table>
+        <p>The grade is a simpler way to read risk than the score. AA is the lowest-risk group of customers and EE the highest.</p></div>
+      <div><h4>Bad rate</h4>
+        <p>The share of applicants with the same score who went on to show bad credit behaviour. A bad rate of 0.1% means about 1 in 1,000 of them did.</p>
+        <h4>What moves the score</h4>
+        <ol class="ks-factors">
+          <li><b>Length of credit history.</b> A long record of handling credit responsibly tends to raise it.</li>
+          <li><b>Credit commitment.</b> How many and what kind of credit products the person holds, and how many they opened recently. This can be an early sign of over-indebtedness.</li>
+          <li><b>Payment behaviour.</b> Consistent, on-time payers score higher than late payers.</li>
+          <li><b>Adverse information.</b> Any write-off with a bank, MFI or other lender lowers the score.</li>
+          <li><b>Enquiry activity.</b> Higher-risk applicants tend to shop around more, so the score looks at the recent trend of enquiries.</li>
+        </ol></div>
+      <div><h4>When there is no K-Score</h4>
+        <table><tbody>${seRows}</tbody></table></div>
+    </div>
+    <p class="ks-src">From Credit Bureau Cambodia’s guide to reading K-Score. The score can change over time as the person’s credit file changes.</p>
+  </details>`;
+  return `<section class="sheet kscore" aria-label="K-Score" style="--g:${k.color}">
+    <header class="ks-head"><h3>K-Score${codeTag('SCORE')}</h3><span>Scale 100 to 1400</span></header>
+    <div class="ks-body">${facts}${track}</div>${help}</section>`;
 }
 const ID_PAIRS = [
   ['Family name','PCNMFE','ACNMFE'], ['Given name','PCNM1E','ACNM1E'], ['Date of birth','PCDOB','ACDOB'],
@@ -667,7 +788,7 @@ function renderIndex(){
   list.innerHTML = items.map(({r, i}) => {
     const acc = num(r.summary.CNT_ACC) ?? r.accounts.length;
     return `<button class="item" type="button" data-i="${i}" aria-current="${i === state.sel}">
-      <span class="nm">${esc(r.name)}</span><span class="n">#${r.row}</span>
+      <span class="nm">${esc(r.name)}</span><span class="n"><span class="gmini" style="--g:${r.k.color}">${r.k.score != null ? `${r.k.grade} ${r.k.score}` : esc(r.k.code)}</span></span>
       <span class="sub">${esc(r.id.idNo || 'No ID')} · ${esc(r.meta.REPORT_DATE || '—')}<br>${plural(acc, 'account')} · ${plural(r.enquiries.length, 'enquiry', 'enquiries')}</span>
     </button>`;
   }).join('');
@@ -709,7 +830,6 @@ function renderReport(){
   ].filter(x => x[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
 
   const pills = [];
-  pills.push(`<span class="pill ${r.scoreTone}"><span class="dot"></span>${esc(r.scoreText)}</span>`);
   const adv = r.advisory.map(a => decode('advisory', a));
   if (adv.length) pills.push(`<span class="pill ${r.advisory.every(a => a === 'NOADV') ? 'good' : 'warn'}"><span class="dot"></span>${esc(adv.join('; '))}</span>`);
   if (r.idChecks.length) pills.push(r.idDiffs
@@ -773,7 +893,7 @@ function renderReport(){
   const raw = `<details class="sheet raw" id="raw"><summary>Original XML</summary><div class="rawtools"><button class="btn small" type="button" data-copy="xml">Copy XML</button></div><pre class="xml" id="xmlPre"></pre></details>`;
   copyFns.xml = () => pretty(r.el, 0);
 
-  host.innerHTML = head + tilesHtml + accHtml + enqHtml + empHtml + addrHtml + idHtml + namesHtml + otherHtml + raw +
+  host.innerHTML = ksHtml(r) + head + tilesHtml + accHtml + enqHtml + empHtml + addrHtml + idHtml + namesHtml + otherHtml + raw +
     (r.disclaimer ? `<p class="disclaimer">${esc(r.disclaimer)}</p>` : '');
   renderAccounts(r);
 }
@@ -964,7 +1084,7 @@ function overviewRow(r){
     'Total limits': lim, 'Limits currency': limCur, 'Outstanding': liab, 'Outstanding currency': liabCur,
     'Written-off amount': wo, 'Written-off currency': woCur,
     'Enquiries': num(S.CNT_PE), 'Enquiries 30 days': r.win.d30, 'Enquiries 90 days': r.win.d90, 'Enquiries 12 months': r.win.d365,
-    'First account opened': S.EISDT, 'Score / message': r.scoreText, 'Advisory': r.advisory.map(a => decode('advisory', a)).join('; '),
+    'First account opened': S.EISDT, 'K-Score': r.k.score, 'Risk grade': r.k.grade, 'Bad rate %': r.k.bad, 'No-score code': r.k.score == null ? r.k.code : '', 'No-score reason': r.k.score == null ? r.k.reason : '', 'Advisory': r.advisory.map(a => decode('advisory', a)).join('; '),
     'Identity differences': r.idDiffs
   };
 }
@@ -1036,6 +1156,7 @@ $('#report').addEventListener('click', e => {
   renderAccounts(r);
 });
 document.addEventListener('toggle', e => {
+  if (e.target.id === 'ksHelp') ksHelpOpen = e.target.open;
   if (e.target.id === 'raw' && e.target.open){
     const r = state.reports[state.sel], pre = $('#xmlPre');
     if (r && pre && !pre.textContent) pre.textContent = pretty(r.el, 0);

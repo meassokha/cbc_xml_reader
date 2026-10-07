@@ -6,7 +6,10 @@ onto a single line, which is unreadable in Notepad. This page turns each report 
 
 ## What it shows
 
-- Applicant identity, report reference, score message and advisory
+- K-Score panel laid out like CBC's report: risk grade (AA to EE), score marker on the 100 to 1400 bar and bad rate.
+  When CBC gives no score, the SE1 to SE7 code is shown with its meaning, and SE5 to SE7 are flagged in red.
+  A "How to read K-Score" guide explains grades, bad rate, scoring factors and SE codes
+- Applicant identity, report reference and advisory
 - Loan accounts grouped by bank, with:
   - a multi-select bank filter
   - an **All loans / Active only** switch (active = not marked closed)
