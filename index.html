@@ -249,6 +249,11 @@ textarea.xi{resize:vertical;min-height:58px}
 .xwas b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
 @media (max-width:560px){.xf{grid-template-columns:minmax(0,1fr)}.xwas{grid-column:1}}
 
+.edited{background:var(--warn-soft);border-radius:3px}
+dd.edited{box-shadow:0 0 0 4px var(--warn-soft)}
+.was{display:block;font:11.5px var(--f-mono);color:var(--muted)}
+.acct.has-edit{border-color:var(--warn)}
+
 /* loan account filters and totals */
 .acc-controls{display:flex;flex-direction:column;gap:12px;padding:14px 20px;border-bottom:1px solid var(--rule)}
 .ctl{display:flex;flex-direction:column;gap:8px}
@@ -430,7 +435,7 @@ function flat(el, out = {}){
   }
   return out;
 }
-const groupRows = (C, g, r) => { const grp = child(C, g); return grp ? kids(grp).filter(x => x.tagName === r).map(x => flat(x)) : []; };
+const groupRows = (C, g, r) => { const grp = child(C, g); return grp ? kids(grp).filter(x => x.tagName === r).map(x => { const o = flat(x); Object.defineProperty(o, '_el', {value: x}); return o; }) : []; };
 function num(s){
   if (s == null || s === '') return null;
   const n = Number(String(s).replace(/,/g, ''));
@@ -944,14 +949,25 @@ function cell(row, c){
 }
 const colCodes = c => keysOf(c).filter(Boolean).join(', ');
 
+/* Which displayed values were edited in this session (set per render) */
+let editCtx = null;
+function editOf(row, tag){
+  if (!editCtx || !row || !row._el || !tag) return null;
+  const leaf = row._el.getElementsByTagName(tag)[0];
+  if (!leaf) return null;
+  return editCtx.f.changes.get(`${editCtx.r.chunkIdx}:${editCtx.r.ord.get(leaf)}`) || null;
+}
+const wasText = ch => `Was ${ch.oldValue === '' ? '(empty)' : ch.oldValue}`;
 function tableHtml(rows, cols, key){
   const all = withExtras(rows, cols);
   copyFns[key] = () => [all.map(c => c.l).join('\t')].concat(rows.map(r => all.map(c => cell(r, c).text.replace(/\t/g, ' ')).join('\t'))).join('\n');
   const head = all.map(c => `<th${c.money || c.numeric ? ' class="num"' : ''} title="${esc(colCodes(c))}">${esc(c.l)}${codeTag(colCodes(c))}</th>`).join('');
   const body = rows.map(r => '<tr>' + all.map(c => {
     const v = cell(r, c);
-    const cls = [v.isNum ? 'num' : '', v.mono ? 'mono' : '', v.text ? '' : 'dim'].filter(Boolean).join(' ');
-    return `<td${cls ? ` class="${cls}"` : ''}${v.title && v.title !== v.text ? ` title="Code ${esc(v.title)}"` : ''}>${v.text ? esc(v.text) : '—'}</td>`;
+    const ed = editOf(r, c.k) || (c.money && editOf(r, c.money));
+    const cls = [v.isNum ? 'num' : '', v.mono ? 'mono' : '', v.text ? '' : 'dim', ed ? 'edited' : ''].filter(Boolean).join(' ');
+    const title = ed ? wasText(ed) : (v.title && v.title !== v.text ? `Code ${v.title}` : '');
+    return `<td${cls ? ` class="${cls}"` : ''}${title ? ` title="${esc(title)}"` : ''}>${v.text ? esc(v.text) : '—'}</td>`;
   }).join('') + '</tr>').join('');
   return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -1035,6 +1051,7 @@ function renderReport(){
     host.innerHTML = `<div class="sheet blank"><h2>No reports to show</h2><p>Open a .txt export from the credit bureau, or paste its text into this page.</p></div>`;
     return;
   }
+  editCtx = {r, f: state.files[r.fileIdx]};
   const I = r.id, S = r.summary, M = r.meta;
   const n = k => num(S[k]) ?? 0;
 
@@ -1158,13 +1175,15 @@ function accCard(a, cols){
   const kv = cols.filter(c => !ACC_HEAD.includes(c)).map(c => {
     const v = cell(a, c);
     if (c.opt && !v.text) return '';
-    const cls = [v.mono || c.mono ? 'mono' : '', !v.text ? 'dim' : '', c.alert && (v.num || 0) > 0 ? 'warn' : ''].filter(Boolean).join(' ');
-    return `<div><dt title="${esc(colCodes(c))}">${esc(c.l)}${codeTag(colCodes(c))}</dt><dd${cls ? ` class="${cls}"` : ''}>${v.text ? esc(v.text) : '—'}</dd></div>`;
+    const ed = editOf(a, c.k) || (c.money && editOf(a, c.money));
+    const cls = [v.mono || c.mono ? 'mono' : '', !v.text ? 'dim' : '', c.alert && (v.num || 0) > 0 ? 'warn' : '', ed ? 'edited' : ''].filter(Boolean).join(' ');
+    return `<div><dt title="${esc(colCodes(c))}">${esc(c.l)}${codeTag(colCodes(c))}</dt><dd${cls ? ` class="${cls}"` : ''}>${v.text ? esc(v.text) : '—'}${ed ? `<span class="was">${esc(wasText(ed))}</span>` : ''}</dd></div>`;
   }).join('');
-  return `<article class="acct">
+  const edCount = cols.filter(c => editOf(a, c.k)).length;
+  return `<article class="acct${edCount ? ' has-edit' : ''}">
     <div class="acct-head">
       <div><div class="lender">Account ${esc(a.ACC_ACC_NO || '—')}</div><div class="meta">${esc(decode('product', a.ACC_PRD))} · ${esc(a.ACC_CURR || '')} · opened ${esc(a.ACC_ISSU_DT || '—')}</div></div>
-      <div class="tools"><span class="pill ${tone}" title="Code ${esc(st)}"><span class="dot"></span>${esc(decode('status', st) || 'Status unknown')}</span>${od > 0 ? `<span class="pill warn"><span class="dot"></span>Overdue ${esc(fmtMoney(od, a.ACC_CURR))}</span>` : ''}</div>
+      <div class="tools">${edCount ? `<span class="pill warn"><span class="dot"></span>Edited</span>` : ''}<span class="pill ${tone}" title="Code ${esc(st)}"><span class="dot"></span>${esc(decode('status', st) || 'Status unknown')}</span>${od > 0 ? `<span class="pill warn"><span class="dot"></span>Overdue ${esc(fmtMoney(od, a.ACC_CURR))}</span>` : ''}</div>
     </div>
     <dl class="kv">${kv}</dl>
   </article>`;
