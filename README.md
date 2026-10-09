@@ -18,6 +18,10 @@ onto a single line, which is unreadable in Notepad. This page turns each report 
 - Employment, addresses, other names on file, and a check of the details the lender sent against the bureau record
 - The original XML, pretty-printed
 - **Export to Excel**: Overview, Loan accounts, Enquiries, Employment and Addresses sheets
+- **Edit XML**: change any field value (grouped like the report, with search and a review list of changes).
+  **Save as new file** writes a copy that is byte-for-byte identical to the original except the edited values:
+  same encoding and byte-order mark, line endings, empty tags and column padding in pipe-table exports.
+  Every save creates a new file named `<original>_edited_<YYYYMMDD-HHMMSS>`; the original is never overwritten
 
 ## How to use
 

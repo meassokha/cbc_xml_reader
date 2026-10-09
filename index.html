@@ -202,6 +202,53 @@ tr.diff td:first-child{color:var(--warn);font-weight:600}
 .kv dd.mono{font-family:var(--f-mono);font-size:13px}
 .kv dd.warn{color:var(--warn);font-weight:600}
 
+/* XML editor */
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btn.save{border-color:var(--warn);color:var(--warn)}
+.tag.edit{background:var(--warn-soft);color:var(--warn)}
+.editor{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.ed-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px;padding:14px 20px;border-bottom:1px solid var(--rule);background:var(--accent-soft);border-radius:9px 9px 0 0}
+.ed-head h3{font:600 17px/1.2 var(--f-display);margin:0;letter-spacing:.01em}
+.ed-sub{margin:3px 0 0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.ed-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.ed-count{font:500 12.5px var(--f-mono);color:var(--muted)}
+.ed-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 20px 6px}
+.ed-tools .search{flex:1 1 240px;width:auto;min-width:0}
+.ed-note{margin:0;padding:4px 20px 12px;font-size:12.5px;color:var(--muted);max-width:90ch}
+.ed-warn{margin:0 20px 12px;padding:10px 12px;border-radius:8px;background:var(--warn-soft);font-size:13.5px}
+details.ed-changes{margin:0 20px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+details.ed-changes > summary{cursor:pointer;padding:9px 12px;font:600 13.5px var(--f-body)}
+details.ed-changes td,details.ed-changes th{white-space:normal;overflow-wrap:anywhere}
+details.ed-changes td.mono{max-width:28ch;min-width:10ch}
+details.ed-changes td:last-child{white-space:nowrap}
+code.tg{font:11.5px var(--f-mono);color:var(--muted);margin-left:6px;white-space:nowrap}
+.ed-fields{max-height:62vh;overflow:auto;border-top:1px solid var(--rule);padding:6px 12px 12px;overscroll-behavior:contain}
+.ed-empty{margin:0;padding:14px 8px;color:var(--muted);font-size:13.5px}
+details.xg{border-bottom:1px solid var(--rule)}
+details.xg:last-child{border-bottom:0}
+details.xg > summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:9px 6px;font:600 14px/1.3 var(--f-body)}
+details.xg > summary::-webkit-details-marker{display:none}
+details.xg > summary::before{content:"▸";font-size:11px;color:var(--muted);width:12px;flex:none}
+details.xg[open] > summary::before{content:"▾"}
+.xg-t{overflow-wrap:anywhere;min-width:0}
+.xg-n{font:500 11.5px/1 var(--f-mono);color:var(--muted)}
+.xg-ch{font:600 11.5px/1 var(--f-body);padding:4px 7px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.xg-b{padding:0 0 8px 12px;display:flex;flex-direction:column;gap:2px}
+.xg-b details.xg{border-bottom:0;border-left:2px solid var(--rule);padding-left:6px}
+.xf{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:3px 14px;align-items:center;padding:4px 6px;border-radius:6px}
+.xf:hover{background:var(--tint)}
+.xf label{min-width:0;font-size:13.5px;overflow-wrap:anywhere}
+.xi{width:100%;min-width:0;font:13px/1.35 var(--f-mono);padding:6px 8px;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}
+textarea.xi{resize:vertical;min-height:58px}
+.xi:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
+.xi:disabled{opacity:.7;cursor:not-allowed}
+.xf.changed{background:var(--warn-soft)}
+.xf.changed .xi{border-color:var(--warn);background:var(--sheet)}
+.xwas{grid-column:2;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.xwas b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+@media (max-width:560px){.xf{grid-template-columns:minmax(0,1fr)}.xwas{grid-column:1}}
+
 /* loan account filters and totals */
 .acc-controls{display:flex;flex-direction:column;gap:12px;padding:14px 20px;border-bottom:1px solid var(--rule)}
 .ctl{display:flex;flex-direction:column;gap:8px}
@@ -278,6 +325,8 @@ body.dragging .overlay{display:grid}
     </div>
     <div class="actions">
       <label class="switch" for="codes"><input type="checkbox" id="codes"> Show field codes</label>
+      <button class="btn" id="editBtn" type="button" aria-pressed="false" hidden>Edit XML</button>
+      <button class="btn save" id="saveBtn" type="button" hidden>Save as new file</button>
       <button class="btn" id="export" type="button" hidden>Export to Excel</button>
       <button class="btn primary" id="open" type="button">Open file</button>
       <input type="file" id="file" accept=".txt,.xml,.csv,.tsv,text/plain,text/xml" multiple hidden>
@@ -297,7 +346,10 @@ body.dragging .overlay{display:grid}
       <input class="search" id="search" type="search" placeholder="Search name, ID or reference" autocomplete="off">
       <div class="list" id="list"></div>
     </aside>
-    <section class="report" id="report" aria-live="polite"></section>
+    <div class="col">
+      <section class="sheet editor" id="editor" aria-label="Edit XML" hidden></section>
+      <section class="report" id="report"></section>
+    </div>
   </main>
 </div>
 
@@ -411,22 +463,141 @@ const codeTag = c => c ? `<span class="code">${esc(c)}</span>` : '';
 /* ---------------- reading the file ---------------- */
 function decodeBuffer(buf){
   const b = new Uint8Array(buf);
-  if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(b.subarray(2));
-  if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(b.subarray(2));
+  if (b[0] === 0xFF && b[1] === 0xFE) return {text: new TextDecoder('utf-16le').decode(b.subarray(2)), encoding: 'utf-16le', bom: true};
+  if (b[0] === 0xFE && b[1] === 0xFF) return {text: new TextDecoder('utf-16be').decode(b.subarray(2)), encoding: 'utf-16be', bom: true};
   const n = Math.min(b.length, 4000); let zeros = 0;
   for (let i = 1; i < n; i += 2) if (b[i] === 0) zeros++;
-  if (n > 40 && zeros > n / 4) return new TextDecoder('utf-16le').decode(b);
-  return new TextDecoder('utf-8').decode(b);
+  if (n > 40 && zeros > n / 4) return {text: new TextDecoder('utf-16le').decode(b), encoding: 'utf-16le', bom: false};
+  const bom = b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF;
+  return {text: new TextDecoder('utf-8').decode(bom ? b.subarray(3) : b), encoding: 'utf-8', bom};
+}
+/* Write text back in the file's own encoding and byte-order mark */
+function encodeText(s, f){
+  if (f.encoding === 'utf-16le' || f.encoding === 'utf-16be'){
+    const le = f.encoding === 'utf-16le';
+    const out = new Uint8Array((f.bom ? 2 : 0) + s.length * 2); let o = 0;
+    if (f.bom){ out[o++] = le ? 0xFF : 0xFE; out[o++] = le ? 0xFE : 0xFF; }
+    for (let i = 0; i < s.length; i++){ const c = s.charCodeAt(i); if (le){ out[o++] = c & 255; out[o++] = c >> 8; } else { out[o++] = c >> 8; out[o++] = c & 255; } }
+    return out;
+  }
+  const body = new TextEncoder().encode(s);
+  if (!f.bom) return body;
+  const out = new Uint8Array(body.length + 3); out.set([0xEF, 0xBB, 0xBF]); out.set(body, 3); return out;
+}
+function sameBytes(a, b){
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
 }
 function unescapeEntities(t){
   return t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
 }
 function extractChunks(text){
   for (const re of [/<RESPONSE\b[\s\S]*?<\/RESPONSE>/g, /<ITEM\b[\s\S]*?<\/ITEM>/g, /<RSP_REPORT\b[\s\S]*?<\/RSP_REPORT>/g]){
-    const m = text.match(re);
-    if (m && m.length) return m;
+    const out = []; let m;
+    while ((m = re.exec(text))) out.push({start: m.index, end: m.index + m[0].length});
+    if (out.length) return out;
   }
   return [];
+}
+/* Find every element's exact character positions in the original text, in document order.
+   Edits replace only a leaf's content, so the rest of the file is copied unchanged. */
+function tokenize(str){
+  const els = [], stack = [], n = str.length;
+  let i = 0;
+  while (i < n){
+    const lt = str.indexOf('<', i);
+    if (lt < 0) break;
+    if (str.startsWith('<!--', lt)){ const e = str.indexOf('-->', lt + 4); i = e < 0 ? n : e + 3; continue; }
+    if (str.startsWith('<![CDATA[', lt)){ const e = str.indexOf(']]>', lt + 9); i = e < 0 ? n : e + 3; continue; }
+    if (str.startsWith('<?', lt)){ const e = str.indexOf('?>', lt + 2); i = e < 0 ? n : e + 2; continue; }
+    if (str.startsWith('<!', lt)){ const e = str.indexOf('>', lt + 2); i = e < 0 ? n : e + 1; continue; }
+    let j = lt + 1, q = '';
+    for (; j < n; j++){ const ch = str[j]; if (q){ if (ch === q) q = ''; } else if (ch === '"' || ch === "'") q = ch; else if (ch === '>') break; }
+    const end = Math.min(j + 1, n), inner = str.slice(lt + 1, j);
+    if (inner[0] === '/'){ const node = stack.pop(); if (node) node.contentEnd = lt; }
+    else {
+      const name = (/^[^\s\/>]+/.exec(inner) || [''])[0];
+      const node = {name, openStart: lt, openEnd: end, selfClose: /\/\s*$/.test(inner), contentStart: end, contentEnd: end, children: 0};
+      if (stack.length) stack[stack.length - 1].children++;
+      els.push(node);
+      if (!node.selfClose) stack.push(node);
+    }
+    i = end;
+  }
+  return els;
+}
+function escXmlText(v, quoteDoubled){
+  let s = String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return quoteDoubled ? s.replace(/"/g, '""') : s;
+}
+function chunkWithChanges(f, ci, orig){
+  const list = [];
+  for (const ch of f.changes.values()) if (ch.ci === ci) list.push(ch);
+  if (!list.length) return orig;
+  const c = f.chunks[ci];
+  const toks = c.tokens || (c.tokens = tokenize(orig));
+  list.sort((a, b) => b.ord - a.ord);
+  let s = orig;
+  for (const ch of list){
+    const t = toks[ch.ord];
+    if (!t || t.children) continue;
+    const raw = escXmlText(ch.value, c.quoteDoubled);
+    if (t.selfClose){
+      const open = orig.slice(t.openStart, t.openEnd).replace(/\s*\/\s*>$/, '>');
+      s = s.slice(0, t.openStart) + open + raw + `</${t.name}>` + s.slice(t.openEnd);
+    } else {
+      s = s.slice(0, t.contentStart) + raw + s.slice(t.contentEnd);
+    }
+  }
+  return s;
+}
+/* Fixed-width table exports (|xml_data|...|) pad every line to the same width.
+   Keep that: absorb a length change in the edited line's padding, or widen the whole table evenly. */
+function fixTablePadding(orig, s){
+  const oL = orig.split('\n'), nL = s.split('\n');
+  if (oL.length !== nL.length) return s;
+  const isRow = l => /^\|.*\|\r?$/.test(l);
+  const isSep = l => /^\|-+\|\r?$/.test(l);
+  const bare = l => l.endsWith('\r') ? l.slice(0, -1) : l;
+  const widths = oL.filter(isRow).map(l => bare(l).length);
+  if (widths.length < 2 || widths.some(w => w !== widths[0])) return s;
+  let over = 0; const overBy = new Map();
+  for (let i = 0; i < nL.length; i++){
+    if (nL[i] === oL[i] || !isRow(nL[i]) || !isRow(oL[i])) continue;
+    const cr = nL[i].endsWith('\r') ? '\r' : '';
+    let body = bare(nL[i]);
+    let d = body.length - bare(oL[i]).length;
+    if (d < 0) body = body.slice(0, -1) + ' '.repeat(-d) + '|';
+    else if (d > 0){
+      const sp = /( *)\|$/.exec(body)[1].length, cut = Math.min(sp, d);
+      body = body.slice(0, body.length - 1 - cut) + '|'; d -= cut;
+      if (d > 0){ over = Math.max(over, d); overBy.set(i, d); }
+    }
+    nL[i] = body + cr;
+  }
+  if (over > 0){
+    for (let i = 0; i < nL.length; i++){
+      if (!isRow(nL[i])) continue;
+      const add = over - (overBy.get(i) || 0);
+      if (!add) continue;
+      const cr = nL[i].endsWith('\r') ? '\r' : '';
+      const body = bare(nL[i]);
+      nL[i] = body.slice(0, -1) + (isSep(nL[i]) ? '-' : ' ').repeat(add) + '|' + cr;
+    }
+  }
+  return nL.join('\n');
+}
+function assembleText(f){
+  if (!f.changes.size) return f.original;
+  if (!f.editable) throw new Error('this file can’t be edited');
+  let s = f.base;
+  const touched = [...new Set([...f.changes.values()].map(c => c.ci))].sort((a, b) => b - a);
+  for (const ci of touched){
+    const c = f.chunks[ci];
+    s = s.slice(0, c.start) + chunkWithChanges(f, ci, f.base.slice(c.start, c.end)) + s.slice(c.end);
+  }
+  return fixTablePadding(f.base, s);
 }
 function parseXml(s){
   const d = new DOMParser().parseFromString(s, 'application/xml');
@@ -456,7 +627,7 @@ function buildReports(R){
     const g = (pk, ak) => P[pk] || A[ak] || '';
     const S = child(C, 'SUMMARY');
     const r = {
-      meta, disclaimer, el: R, P, A,
+      meta, disclaimer, el: R, reportEl: R, consumerEl: C, P, A,
       capl: childText(C, 'CAPL'),
       id: {
         family: g('PCNMFE','ACNMFE'), given: g('PCNM1E','ACNM1E'), dob: g('PCDOB','ACDOB'),
@@ -608,44 +779,65 @@ const ID_PAIRS = [
   ['ID type','CID1','ACID1','idType'], ['ID number','CID2','ACID2'], ['ID expiry','CID3','ACID3'], ['Email','PCEML','ACEML']
 ];
 
-function parseText(text, fileName){
-  const reports = [], issues = [];
-  let t = text.replace(/¶/g, '');
-  if (!/<(RESPONSE|RSP_REPORT)\b/.test(t) && /&lt;(RESPONSE|RSP_REPORT)\b/.test(t)) t = unescapeEntities(t);
-  const chunks = extractChunks(t);
-  if (!chunks.length){
-    issues.push(`<b>${esc(fileName)}</b>: no Credit Bureau XML found. The reader looks for &lt;RESPONSE&gt; or &lt;RSP_REPORT&gt; blocks.`);
-    return {reports, issues};
+function prepareFile(src){
+  const f = {name: src.name, original: src.text || '', encoding: src.encoding || 'utf-8', bom: !!src.bom, lossless: src.lossless !== false,
+             base: src.text || '', editable: true, whyNot: '', chunks: [], prepIssues: [], reports: [], issues: [],
+             changes: new Map(), dirty: false, savedAs: ''};
+  if (!/<(RESPONSE|RSP_REPORT)\b/.test(f.base) && /&lt;(RESPONSE|RSP_REPORT)\b/.test(f.base)){
+    f.base = unescapeEntities(f.base); f.editable = false;
+    f.whyNot = 'This file stores the XML in escaped form (&amp;lt; … &amp;gt;), so it can be read here but not edited.';
   }
-  const opened = (t.match(/<RESPONSE\b/g) || []).length;
-  if (chunks[0].startsWith('<RESPONSE') && opened > chunks.length){
-    issues.push(`<b>${esc(fileName)}</b>: ${plural(opened - chunks.length, 'record')} ${opened - chunks.length === 1 ? 'is' : 'are'} cut off (no closing tag) and couldn’t be read. Ask the sender for a full export.`);
+  f.chunks = extractChunks(f.base);
+  const nm = esc(f.name);
+  if (!f.chunks.length) f.prepIssues.push(`<b>${nm}</b>: no Credit Bureau XML found. The reader looks for &lt;RESPONSE&gt; or &lt;RSP_REPORT&gt; blocks.`);
+  else {
+    const opened = (f.base.match(/<RESPONSE\b/g) || []).length, cut = opened - f.chunks.length;
+    if (f.base.startsWith('<RESPONSE', f.chunks[0].start) && cut > 0)
+      f.prepIssues.push(`<b>${nm}</b>: ${plural(cut, 'record')} ${cut === 1 ? 'is' : 'are'} cut off (no closing tag) and couldn’t be read. Ask the sender for a full export.`);
   }
-  chunks.forEach((ch, i) => {
-    let doc = parseXml(ch);
-    if (!doc && ch.includes('""')) doc = parseXml(ch.replace(/""/g, '"'));
-    if (!doc){ issues.push(`<b>${esc(fileName)}</b>, record ${i + 1}: the XML is damaged or incomplete, so it was skipped.`); return; }
+  return f;
+}
+function parseFile(f, fi){
+  const reports = [], issues = f.prepIssues.slice(), nm = esc(f.name);
+  f.chunks.forEach((c, ci) => {
+    const orig = f.base.slice(c.start, c.end);
+    const str = chunkWithChanges(f, ci, orig).replace(/\u00B6/g, '');
+    let doc = parseXml(str);
+    if (!doc && str.includes('""')){ doc = parseXml(str.replace(/""/g, '"')); if (doc) c.quoteDoubled = true; }
+    if (!doc){ c.editable = false; issues.push(`<b>${nm}</b>, record ${ci + 1}: the XML is damaged or incomplete, so it was skipped.`); return; }
+    const all = Array.from(doc.getElementsByTagName('*'));
+    if (f.editable && !c.tokens) c.tokens = tokenize(orig);
+    c.editable = f.editable && all.length === c.tokens.length && all.every((el, k) => el.tagName === c.tokens[k].name);
+    const ord = new Map(all.map((el, k) => [el, k]));
     const reps = Array.from(doc.getElementsByTagName('RSP_REPORT'));
     if (!reps.length){
       const status = clean(doc.getElementsByTagName('STATUS')[0]?.textContent);
-      const errs = Array.from(doc.getElementsByTagName('*')).filter(e => /ERR|ERROR/.test(e.tagName) && !e.children.length && clean(e.textContent)).map(e => `${e.tagName} ${clean(e.textContent)}`);
-      issues.push(`<b>${esc(fileName)}</b>, record ${i + 1}: the bureau returned no report${status ? ` (status ${esc(status)})` : ''}${errs.length ? ': ' + esc(errs.join('; ')) : ''}.`);
+      const errs = all.filter(e => /ERR|ERROR/.test(e.tagName) && !e.children.length && clean(e.textContent)).map(e => `${e.tagName} ${clean(e.textContent)}`);
+      issues.push(`<b>${nm}</b>, record ${ci + 1}: the bureau returned no report${status ? ` (status ${esc(status)})` : ''}${errs.length ? ': ' + esc(errs.join('; ')) : ''}.`);
       return;
     }
-    reps.forEach(R => buildReports(R).forEach(rep => { rep.file = fileName; rep.row = i + 1; reports.push(rep); }));
+    reps.forEach(R => buildReports(R).forEach(rep => {
+      Object.assign(rep, {file: f.name, fileIdx: fi, chunkIdx: ci, row: ci + 1, ord});
+      reports.push(rep);
+    }));
   });
-  return {reports, issues};
+  f.reports = reports; f.issues = issues;
 }
 
 /* ---------------- state ---------------- */
-const state = {reports: [], issues: [], sel: 0, sample: true, fileNames: [], query: ''};
+const state = {files: [], reports: [], issues: [], sel: 0, sample: true, query: '', editing: false, pending: null, changesOpen: false};
 const copyFns = {};
 
-function load(parts, sample = false){
-  const reports = [], issues = [];
-  for (const p of parts){ const res = parseText(p.text, p.name); reports.push(...res.reports); issues.push(...res.issues); }
-  state.reports = reports; state.issues = issues; state.sel = 0; state.sample = sample;
-  state.fileNames = parts.map(p => p.name); state.query = ''; $('#search').value = '';
+function collect(){
+  state.reports = state.files.flatMap(f => f.reports);
+  state.issues = state.files.flatMap(f => f.issues);
+  if (state.sel >= state.reports.length) state.sel = 0;
+}
+function load(srcs, sample = false){
+  state.files = srcs.map(prepareFile);
+  state.files.forEach(parseFile);
+  state.sel = 0; collect();
+  state.sample = sample; state.query = ''; state.pending = null; $('#search').value = '';
   accPrefs.excluded.clear();
   renderAll();
   if (!sample) window.scrollTo({top: 0});
@@ -653,12 +845,15 @@ function load(parts, sample = false){
 async function loadFiles(fileList){
   const files = Array.from(fileList || []);
   if (!files.length) return;
-  const parts = [];
-  for (const f of files){
-    try { parts.push({name: f.name, text: decodeBuffer(await f.arrayBuffer())}); }
-    catch (e){ parts.push({name: f.name, text: ''}); }
+  const srcs = [];
+  for (const file of files){
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      const d = decodeBuffer(buf);
+      srcs.push(Object.assign({name: file.name, lossless: sameBytes(encodeText(d.text, d), buf)}, d));
+    } catch (e){ srcs.push({name: file.name, text: ''}); }
   }
-  load(parts);
+  load(srcs);
   const n = state.reports.length;
   toast(n ? `Read ${plural(n, 'report')}` : 'No reports could be read from that file');
 }
@@ -771,16 +966,34 @@ function totalsText(list){
 const anyPositive = list => list.some(t => (t.amt || 0) > 0);
 
 function renderAll(){
-  renderIntake(); renderIssues(); renderIndex(); renderReport();
+  renderIntake(); renderIssues(); renderIndex(); renderReport(); renderEditor();
 }
 function renderIntake(){
   const m = $('#intakeMsg');
-  if (state.sample){
-    m.innerHTML = `<span class="tag">Example</span><strong>Two invented applicants are shown.</strong> Open your file to read your own reports.`;
-  } else {
-    const files = state.fileNames.length === 1 ? esc(state.fileNames[0]) : `${state.fileNames.length} files`;
-    m.innerHTML = `<span class="tag ok">Loaded</span><strong>${files}</strong><span>${plural(state.reports.length, 'report')}</span>`;
+  if (state.pending){
+    const dirty = state.files.filter(f => f.dirty);
+    m.innerHTML = `<span class="tag edit">Unsaved</span><strong>${dirty.map(f => esc(f.name)).join(', ')} has edits that aren’t saved.</strong><span>Opening another file will discard them.</span>
+      <button class="btn small primary" type="button" data-guard="save">Save as new file</button>
+      <button class="btn small" type="button" data-guard="discard">Discard edits and continue</button>
+      <button class="link" type="button" data-guard="cancel">Cancel</button>`;
+    return;
   }
+  let html;
+  if (state.sample){
+    html = `<span class="tag">Example</span><strong>Two invented applicants are shown.</strong> Open your file to read your own reports.`;
+  } else {
+    const names = state.files.map(f => f.name);
+    const files = names.length === 1 ? esc(names[0]) : `${names.length} files`;
+    html = `<span class="tag ok">Loaded</span><strong>${files}</strong><span>${plural(state.reports.length, 'report')}</span>`;
+  }
+  const edited = state.files.filter(f => f.changes.size);
+  if (edited.length){
+    const n = edited.reduce((a, f) => a + f.changes.size, 0);
+    const unsaved = edited.some(f => f.dirty);
+    const last = edited.map(f => f.savedAs).filter(Boolean).pop();
+    html += `<span class="tag edit">Edited</span><span>${plural(n, 'change')} · ${unsaved ? 'not saved yet' : 'saved as ' + esc(last)}</span>`;
+  }
+  m.innerHTML = html;
 }
 function renderIssues(){
   const box = $('#issues');
@@ -842,6 +1055,8 @@ function renderReport(){
   ].filter(x => x[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
 
   const pills = [];
+  const nEdited = [...state.files[r.fileIdx].changes.values()].filter(c => c.ci === r.chunkIdx).length;
+  if (nEdited) pills.push(`<span class="pill warn"><span class="dot"></span>Edited: ${plural(nEdited, 'value')} differ${nEdited === 1 ? 's' : ''} from the original file</span>`);
   const adv = r.advisory.map(a => decode('advisory', a));
   if (adv.length) pills.push(`<span class="pill ${r.advisory.every(a => a === 'NOADV') ? 'good' : 'warn'}"><span class="dot"></span>${esc(adv.join('; '))}</span>`);
   if (r.idChecks.length) pills.push(r.idDiffs
@@ -902,7 +1117,7 @@ function renderReport(){
     return block(LABELS[o.tag] || o.tag, null, `<dl class="kv" style="padding:16px 20px">${kv}</dl>`);
   }).join('');
 
-  const raw = `<details class="sheet raw" id="raw"><summary>Original XML</summary><div class="rawtools"><button class="btn small" type="button" data-copy="xml">Copy XML</button></div><pre class="xml" id="xmlPre"></pre></details>`;
+  const raw = `<details class="sheet raw" id="raw"><summary>XML (pretty-printed)</summary><div class="rawtools"><button class="btn small" type="button" data-copy="xml">Copy XML</button></div><pre class="xml" id="xmlPre"></pre></details>`;
   copyFns.xml = () => pretty(r.el, 0);
 
   host.innerHTML = ksHtml(r) + head + tilesHtml + accHtml + enqHtml + empHtml + addrHtml + idHtml + namesHtml + otherHtml + raw +
@@ -1060,6 +1275,8 @@ function copyText(text, okMsg){
 
 /* ---------------- Excel export ---------------- */
 let downloads = null;
+let inFrame = true;
+try { inFrame = window.self !== window.top; } catch (e) {}
 function loadXLSX(){
   if (window.XLSX) return Promise.resolve();
   return new Promise((res, rej) => {
@@ -1120,7 +1337,7 @@ async function doExport(){
     XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.employers, COLS.employers))), 'Employment');
     XLSX.utils.book_append_sheet(wb, sheetFrom(R.flatMap(r => exportRows(r, r.addresses, COLS.addresses))), 'Addresses');
     const buf = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
-    const base = state.sample ? 'CBC_example' : (state.fileNames[0] || 'CBC_reports').replace(/\.[^.]+$/, '');
+    const base = state.sample ? 'CBC_example' : ((state.files[0] && state.files[0].name) || 'CBC_reports').replace(/\.[^.]+$/, '');
     await downloads.save({filename: `${base}_readable.xlsx`, data: buf});
     toast('Excel file saved');
   } catch (e){
@@ -1134,14 +1351,345 @@ async function doExport(){
   }
 }
 
+/* ---------------- XML editor ---------------- */
+const GROUP_LABELS = {
+  HEADER:'Header', CID:'ID document', ACID:'ID document', PROVIDED:'Details sent by the lender', AVAILABLE:'Details on the bureau file',
+  PCNAM:'Name', ACNAM:'Name', PCPLB:'Place of birth', ACPLB:'Place of birth', ADDITIONAL_IDS:'Other IDs', ADDITIONAL_NAMES:'Other names',
+  PREV_ENQUIRIES:'Previous enquiries', PE_NAME:'Name as sent', ACC_DETAILS:'Loan accounts', ACC_ADV_MSGS:'Advisory messages',
+  ADDRESSES:'Addresses', EMPLOYERS:'Employment', EADR:'Work address', ADVISORY_SUMMARY_TEXT:'Advisory', SUMMARY:'Summary',
+  TOT_LIMITS:'Total limits', TOT_GLIMITS:'Guaranteed limits', TOT_LIABILITIES:'Total outstanding', TOT_GLIABILITIES:'Guaranteed outstanding',
+  TOT_WO_AMT:'Written off', TOT_GWO_AMT:'Guaranteed written off', TOT_WO_OS_BALANCE:'Written off, still owed', TOT_GWO_OS_BALANCE:'Guaranteed written off, still owed',
+  SCORE:'K-Score', DISCLAIMER:'Disclaimer', CONSUMER:'Consumer', ITEM:'Item', MESSAGE:'Message'
+};
+let FIELD_LABELS = null;
+function fieldLabels(){
+  if (FIELD_LABELS) return FIELD_LABELS;
+  const L = {};
+  for (const list of Object.values(COLS)) for (const c of list) if (!c.join && !c.geo) L[c.k] = c.l;
+  for (const c of ACC_HEAD) L[c.k] = c.l;
+  for (const [l, pk, ak] of ID_PAIRS){ L[pk] = l; L[ak] = l; }
+  Object.assign(L, LABELS, {
+    SERVICE:'Service', ACTION:'Action', STATUS:'Status', MEMBER_ID:'Member ID', USER_ID:'User ID', RUN_NO:'Run no.', TOT_ITEMS:'Total items', ERR_ITEMS:'Error items',
+    CAPL:'Applicant role', PCNMFA:'Family name (Khmer)', PCNM1A:'Given name (Khmer)', ACNMFA:'Family name (Khmer)', ACNM1A:'Given name (Khmer)', ACNM7A:'Full name (Khmer)',
+    ACPLBD:'Birth district', ACPLBCM:'Birth commune', AID_CID1:'ID type', AID_CID2:'ID number', AID_CID3:'ID expiry', AID_LOADDT:'Reported',
+    ANM_CNMFE:'Name part 1', ANM_CNM1E:'Name part 2', ANM_CNM7E:'Full name', ANM_CNMFA:'Name part 1 (Khmer)', ANM_CNM1A:'Name part 2 (Khmer)',
+    ANM_CNM2A:'Name part 3 (Khmer)', ANM_CNM3A:'Name part 4 (Khmer)', ANM_CNM7A:'Full name (Khmer)',
+    PE_NMFE:'Family name', PE_NM1E:'Given name', PE_NMFA:'Family name (Khmer)', PE_NM1A:'Given name (Khmer)', PE_CURR:'Currency',
+    ACC_ADV_EFFDAT:'Effective date', ACC_ADV_TXT:'Message', CA_CADT:'Address type', CA_DIST:'District code', CA_COMM:'Commune code', CA_VILL:'Village code',
+    CA_HOUSE:'House no.', CA_STREET:'Street', EA_CADT:'Address type', EA_PROV:'Province', EA_DIST:'District code', EA_COMM:'Commune code', EA_VILL:'Village code', EA_AD9:'Country',
+    ECURR:'Income currency', ADVISORY_TEXT:'Advisory', DI_TEXT:'Disclaimer text',
+    CNT_PE:'Previous enquiries', CNT_ACC:'Accounts', CNT_ACC_NORM:'Normal accounts', CNT_ACC_DELQ:'Delinquent accounts', CNT_ACC_CLO:'Closed accounts',
+    CNT_ACC_REJ:'Rejected accounts', CNT_ACC_WRO:'Written-off accounts', CNT_GACC:'Accounts as guarantor', CNT_GACC_NORM:'Guarantor: normal',
+    CNT_GACC_DELQ:'Guarantor: delinquent', CNT_GACC_ACC_CLO:'Guarantor: closed', CNT_GACC_REJ:'Guarantor: rejected', CNT_GACC_WRO:'Guarantor: written off',
+    EISDT:'First account opened', TOT_LIM_CURR:'Currency', TOT_LIM:'Total limit', TOT_GLIM_CURR:'Currency', TOT_GLIM:'Guaranteed limit',
+    TOT_LIAB_CURR:'Currency', TOT_LIAB:'Total outstanding', TOT_GLIAB_CURR:'Currency', TOT_GLIAB:'Guaranteed outstanding',
+    TOT_WO_CURR:'Currency', TOT_WO:'Written-off amount', TOT_GWO_CURR:'Currency', TOT_GWO:'Guaranteed written off',
+    TOT_WO_OS_CURR:'Currency', TOT_WO_OS_BAL:'Written off, still owed', TOT_GWO_OS_CURR:'Currency', TOT_GWO_OS_BAL:'Guaranteed written off, still owed',
+    SC_SCORE:'K-Score', SC_SCORECARD:'Scorecard', SC_SCOREINDEX:'Score index', SC_ODDS:'Odds', SC_BAD:'Bad rate %', SC_MINIMUM:'Scale minimum',
+    SC_MAXIMUM:'Scale maximum', SC_ERROR:'No-score code'
+  });
+  return (FIELD_LABELS = L);
+}
+function groupLabel(el, idx){
+  const f = n => childText(el, n), j = (...xs) => xs.filter(Boolean).join(' · ');
+  switch (el.tagName){
+    case 'PREV_ENQUIRY': return j(`Enquiry ${idx}`, f('PE_DATE'), f('PE_ENQR'));
+    case 'ACC_DETAIL': return j(f('ACC_CRDTR') || `Account ${idx}`, f('ACC_ACC_NO'));
+    case 'ADDRESS': return j(`Address ${idx}`, f('CA_LOAD_DT'), decode('addrType', f('CA_CADT')));
+    case 'EMPLOYER': return j(`Employer ${idx}`, f('EDLD'), f('ENME'));
+    case 'ADDITIONAL_NAME': return j(`Name ${idx}`, f('ANM_LOAD_DT'));
+    case 'ADDITIONAL_ID': return j(`ID ${idx}`, f('AID_CID2'));
+    case 'ACC_ADV_MSG': return j(`Message ${idx}`, f('ACC_ADV_EFFDAT'));
+  }
+  const base = GROUP_LABELS[el.tagName] || el.tagName;
+  if (/^TOT_/.test(el.tagName)){ const cur = kids(el).find(k => /_CURR$/.test(k.tagName)); return j(base, cur && clean(cur.textContent)); }
+  return idx > 1 ? `${base} ${idx}` : base;
+}
+const leafCount = el => Array.from(el.getElementsByTagName('*')).filter(e => !e.children.length).length;
+function edRow(ctx, el){
+  const ord = ctx.r.ord.get(el), key = `${ctx.fi}:${ctx.ci}:${ord}`;
+  const ch = ctx.f.changes.get(`${ctx.ci}:${ord}`);
+  const val = el.textContent, orig = ch ? ch.oldValue : val;
+  const label = fieldLabels()[el.tagName] || '';
+  const id = 'xf-' + key.replace(/:/g, '-');
+  const long = val.length > 70 || /\n/.test(val);
+  const input = long
+    ? `<textarea class="xi" id="${id}" rows="3" data-orig="${esc(orig)}" spellcheck="false"${ctx.can ? '' : ' disabled'}>${esc(val)}</textarea>`
+    : `<input class="xi" id="${id}" value="${esc(val)}" data-orig="${esc(orig)}" spellcheck="false" autocomplete="off"${ctx.can ? '' : ' disabled'}>`;
+  return `<div class="xf${ch ? ' changed' : ''}" data-key="${key}" data-tag="${esc(el.tagName)}">
+    <label for="${id}"><span class="xl">${esc(label || el.tagName)}</span>${label ? `<code class="tg">${esc(el.tagName)}</code>` : ''}</label>
+    ${input}
+    <span class="xwas"${ch ? '' : ' hidden'}>Was <b>${esc(orig === '' ? '(empty)' : orig)}</b> · <button class="link" type="button" data-undo="${key}">Undo</button></span>
+  </div>`;
+}
+function edGroup(title, tag, inner, n, open = false){
+  return `<details class="xg"${open ? ' open' : ''}><summary><span class="xg-t">${esc(title)}</span><code class="tg">${esc(tag)}</code><span class="xg-n">${plural(n, 'field')}</span><span class="xg-ch" hidden></span></summary><div class="xg-b">${inner}</div></details>`;
+}
+function edNode(ctx, el){
+  const counts = {};
+  return kids(el).map(k => {
+    if (!k.children.length) return edRow(ctx, k);
+    counts[k.tagName] = (counts[k.tagName] || 0) + 1;
+    return edGroup(groupLabel(k, counts[k.tagName]), k.tagName, edNode(ctx, k), leafCount(k));
+  }).join('');
+}
+function renderEditor(){
+  const ed = $('#editor'), btn = $('#editBtn');
+  ed.hidden = !state.editing;
+  btn.textContent = state.editing ? 'Done editing' : 'Edit XML';
+  btn.setAttribute('aria-pressed', String(state.editing));
+  updateSaveUi();
+  if (!state.editing){ ed.innerHTML = ''; return; }
+  const r = state.reports[state.sel];
+  if (!r){ ed.innerHTML = `<div class="ed-head"><h3>Edit XML</h3></div><p class="ed-empty" style="padding:16px 20px">Open a file to edit its XML.</p>`; return; }
+  const f = state.files[r.fileIdx], c = f.chunks[r.chunkIdx];
+  const ctx = {r, f, fi: r.fileIdx, ci: r.chunkIdx, can: !!c.editable};
+  const R = r.reportEl, C = r.consumerEl, groups = [];
+  /* response header: the wrappers around this report, without other applicants */
+  const anc = []; for (let p = R.parentElement; p; p = p.parentElement) anc.unshift(p);
+  let hdr = '';
+  anc.forEach((a, i) => {
+    const next = anc[i + 1] || R, counts = {};
+    for (const k of kids(a)){
+      if (k === next) continue;
+      if (!k.children.length){ hdr += edRow(ctx, k); continue; }
+      if (k.tagName === 'RSP_REPORT' || k.getElementsByTagName('RSP_REPORT').length) continue;
+      counts[k.tagName] = (counts[k.tagName] || 0) + 1;
+      hdr += edGroup(groupLabel(k, counts[k.tagName]), k.tagName, edNode(ctx, k), leafCount(k));
+    }
+  });
+  const rowsIn = h => (h.match(/class="xf[ "]/g) || []).length;
+  if (hdr) groups.push(edGroup('Response header', anc[0] ? anc[0].tagName : 'RESPONSE', hdr, rowsIn(hdr)));
+  let det = kids(R).filter(k => !k.children.length).map(k => edRow(ctx, k)).join('');
+  if (C) det += kids(C).filter(k => !k.children.length).map(k => edRow(ctx, k)).join('');
+  groups.push(edGroup('Report details', 'RSP_REPORT', det, rowsIn(det), true));
+  if (C){
+    const counts = {};
+    for (const k of kids(C)) if (k.children.length){
+      counts[k.tagName] = (counts[k.tagName] || 0) + 1;
+      groups.push(edGroup(groupLabel(k, counts[k.tagName]), k.tagName, edNode(ctx, k), leafCount(k)));
+    }
+  }
+  for (const k of kids(R)) if (k.children.length && k.tagName !== 'CONSUMER') groups.push(edGroup(groupLabel(k, 1), k.tagName, edNode(ctx, k), leafCount(k)));
+  const warn = [];
+  if (!f.editable) warn.push(f.whyNot);
+  else if (!c.editable) warn.push('This record’s layout couldn’t be matched character for character, so editing is turned off to avoid changing anything else in the file.');
+  if (!f.lossless) warn.push('Some characters in this file couldn’t be read exactly. Saving may change them, so check the saved file.');
+  if (!downloads) warn.push('Saving files isn’t available in this view.');
+  ed.innerHTML = `<div class="ed-head">
+      <div><h3>Edit XML</h3><p class="ed-sub">${esc(r.name)} · record #${r.row} · ${esc(f.name)}</p></div>
+      <div class="ed-actions"><span class="ed-count" id="edCount"></span>
+        <button class="btn small" id="edRevert" type="button">Undo all</button>
+        <button class="btn small primary" id="edSave" type="button">Save as new file</button></div>
+    </div>
+    <div class="ed-tools">
+      <input class="search" id="edFind" type="search" placeholder="Find a field by name, tag or value" autocomplete="off">
+      <label class="switch" for="edOnlyChanged"><input type="checkbox" id="edOnlyChanged"> Changed fields only</label>
+    </div>
+    <p class="ed-note">Change a value and press Enter or click away. The report below updates straight away. Saving copies the original file exactly, replacing only the values you changed, and always creates a new file.</p>
+    ${warn.map(w => `<p class="ed-warn">${w}</p>`).join('')}
+    <div id="edChanges"></div>
+    <div class="ed-fields" id="edFields">${groups.join('')}<p class="ed-empty" id="edEmpty" hidden>No fields match.</p></div>`;
+  renderChanges(); updateGroupBadges(); updateSaveUi();
+}
+function currentFile(){ const r = state.reports[state.sel]; return r ? state.files[r.fileIdx] : null; }
+function updateSaveUi(){
+  const f = currentFile(), n = f ? f.changes.size : 0;
+  $('#editBtn').hidden = !state.reports.length;
+  const sb = $('#saveBtn'); sb.hidden = !(n && downloads);
+  sb.textContent = f && f.dirty ? `Save as new file (${plural(n, 'change')})` : 'Save as new file';
+  const es = $('#edSave'); if (es) es.disabled = !n || !downloads;
+  const er = $('#edRevert'); if (er) er.disabled = !n;
+  const cnt = $('#edCount'); if (cnt) cnt.textContent = n ? `${plural(n, 'change')} · ${f.dirty ? 'not saved' : 'saved'}` : 'No changes yet';
+}
+function groupPath(row){
+  const parts = [];
+  for (let d = row && row.closest('details.xg'); d; d = d.parentElement.closest('details.xg')) parts.unshift(d.querySelector(':scope > summary .xg-t').textContent);
+  return parts.join(' › ');
+}
+function renderChanges(){
+  const box = $('#edChanges'); if (!box) return;
+  const r = state.reports[state.sel], f = currentFile();
+  if (!f || !f.changes.size){ box.innerHTML = ''; return; }
+  const list = [...f.changes.values()].sort((a, b) => a.ci - b.ci || a.ord - b.ord);
+  box.innerHTML = `<details class="ed-changes" id="edChangesList"${state.changesOpen ? ' open' : ''}><summary>Review changes (${list.length})</summary>
+    <div class="tablewrap"><table><thead><tr><th>Field</th><th>Where</th><th>Was</th><th>Now</th><th></th></tr></thead><tbody>${list.map(ch => {
+      const key = `${r.fileIdx}:${ch.ci}:${ch.ord}`;
+      return `<tr><td><button class="link" type="button" data-goto="${key}">${esc(ch.label)}</button><code class="tg">${esc(ch.tag)}</code></td><td>${esc(ch.where)}</td>
+        <td class="mono">${esc(ch.oldValue === '' ? '(empty)' : ch.oldValue)}</td><td class="mono">${esc(ch.value === '' ? '(empty)' : ch.value)}</td>
+        <td><button class="link" type="button" data-undo="${key}">Undo</button></td></tr>`;
+    }).join('')}</tbody></table></div></details>`;
+}
+function updateGroupBadges(){
+  document.querySelectorAll('#editor details.xg').forEach(g => {
+    const n = g.querySelectorAll('.xf.changed').length, b = g.querySelector(':scope > summary .xg-ch');
+    if (b){ b.hidden = !n; b.textContent = n ? `${n} changed` : ''; }
+  });
+}
+function syncRow(key){
+  const row = document.querySelector(`#editor .xf[data-key="${key}"]`); if (!row) return;
+  const [fi, ci, ord] = key.split(':').map(Number);
+  const ch = state.files[fi].changes.get(`${ci}:${ord}`);
+  row.classList.toggle('changed', !!ch);
+  const inp = row.querySelector('.xi');
+  if (!ch && inp.value !== inp.dataset.orig) inp.value = inp.dataset.orig;
+  const was = row.querySelector('.xwas'); was.hidden = !ch;
+  if (ch) was.querySelector('b').textContent = ch.oldValue === '' ? '(empty)' : ch.oldValue;
+}
+function reparse(fi){
+  parseFile(state.files[fi], fi);
+  collect();
+  renderIntake(); renderIssues(); renderIndex(); renderReport();
+  renderChanges(); updateGroupBadges(); updateSaveUi();
+}
+function commitEdit(key, value){
+  const [fi, ci, ord] = key.split(':').map(Number);
+  const f = state.files[fi];
+  if (!f || !f.chunks[ci] || !f.chunks[ci].editable) return;
+  const k = `${ci}:${ord}`, prev = f.changes.get(k);
+  const row = document.querySelector(`#editor .xf[data-key="${key}"]`);
+  const orig = prev ? prev.oldValue : (row ? row.querySelector('.xi').dataset.orig : null);
+  if (orig == null) return;
+  if (value === orig) f.changes.delete(k);
+  else {
+    const r = state.reports[state.sel];
+    f.changes.set(k, {ci, ord, value, oldValue: orig,
+      tag: prev ? prev.tag : row.dataset.tag, label: prev ? prev.label : row.querySelector('.xl').textContent,
+      where: prev ? prev.where : [r && r.name, groupPath(row)].filter(Boolean).join(' › ')});
+  }
+  f.dirty = f.changes.size > 0 || !!f.savedAs;
+  reparse(fi);
+  syncRow(key);
+}
+function filterEditor(){
+  const q = ($('#edFind') ? $('#edFind').value : '').trim().toLowerCase();
+  const only = $('#edOnlyChanged') ? $('#edOnlyChanged').checked : false;
+  const words = q ? q.split(/\s+/) : [];
+  document.querySelectorAll('#editor .xf').forEach(row => {
+    const hay = (row.dataset.tag + ' ' + row.querySelector('.xl').textContent + ' ' + row.querySelector('.xi').value).toLowerCase();
+    row.hidden = (words.length && !words.every(w => hay.includes(w))) || (only && !row.classList.contains('changed'));
+  });
+  const active = !!words.length || only;
+  Array.from(document.querySelectorAll('#editor details.xg')).reverse().forEach(g => {
+    const any = !!g.querySelector('.xf:not([hidden])');
+    g.hidden = active && !any;
+    if (active) g.open = any;
+  });
+  const empty = $('#edEmpty'); if (empty) empty.hidden = !active || !!document.querySelector('#editor .xf:not([hidden])');
+}
+function gotoField(key){
+  let row = document.querySelector(`#editor .xf[data-key="${key}"]`);
+  if (!row){
+    const [fi, ci] = key.split(':').map(Number);
+    const i = state.reports.findIndex(r => r.fileIdx === fi && r.chunkIdx === ci);
+    if (i < 0) return;
+    state.sel = i; renderIndex(); renderReport(); renderEditor();
+    row = document.querySelector(`#editor .xf[data-key="${key}"]`);
+    if (!row) return;
+  }
+  if (row.hidden){ $('#edFind').value = ''; $('#edOnlyChanged').checked = false; filterEditor(); }
+  for (let d = row.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
+  row.scrollIntoView({block: 'center'});
+  row.querySelector('.xi').focus();
+}
+const ALLOWED_EXT = new Set('gif png jpg jpeg webp mp4 webm txt json md docx pptx epub csv ttf html svg pdf xlsx zip'.split(' '));
+function newFileName(orig){
+  const m = /^(.*?)(\.[^.\\/]+)?$/.exec(orig || 'CBC_xml');
+  let base = (m[1] || 'CBC_xml').replace(/_edited_\d{8}-\d{6}$/, ''), ext = m[2] || '.txt';
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  let note = '';
+  if (inFrame && !ALLOWED_EXT.has(ext.slice(1).toLowerCase())){ note = `saved with .txt because this viewer can’t save ${ext} files; rename it if you need ${ext}`; ext = '.txt'; }
+  return {filename: `${base}_edited_${stamp}${ext}`, note};
+}
+async function saveFile(f){
+  if (!f || !f.changes.size){ toast('There are no changes to save yet'); return false; }
+  if (!downloads){ toast('Saving files isn’t available in this view'); return false; }
+  let bytes;
+  try {
+    const text = assembleText(f);
+    const check = prepareFile({name: f.name, text}); parseFile(check, -1);
+    if (check.reports.length !== f.reports.length) throw new Error('the edited file no longer reads the same number of reports');
+    bytes = encodeText(text, f);
+  } catch (e){ toast('Couldn’t build the file: ' + e.message); return false; }
+  const {filename, note} = newFileName(f.name);
+  try {
+    await downloads.save({filename, data: bytes});
+    f.dirty = false; f.savedAs = filename;
+    toast(`Saved as ${filename}${note ? ` (${note})` : ''}`);
+    renderIntake(); renderChanges(); updateSaveUi();
+    return true;
+  } catch (e){
+    const code = e && e.code;
+    if (code === 'declined') toast('Save cancelled');
+    else if (code === 'rate_limited') toast('A save prompt is already open');
+    else toast('Couldn’t save the file: ' + ((e && e.message) || 'unknown error'));
+    return false;
+  }
+}
+function guard(action){
+  if (!state.files.some(f => f.dirty)) return action();
+  state.pending = action; renderIntake();
+  $('#intake').scrollIntoView({block: 'nearest'});
+}
+
 /* ---------------- events ---------------- */
-$('#open').addEventListener('click', () => $('#file').click());
+$('#open').addEventListener('click', () => guard(() => $('#file').click()));
+$('#editBtn').addEventListener('click', () => {
+  state.editing = !state.editing; renderEditor();
+  if (state.editing) $('#editor').scrollIntoView({behavior: 'smooth', block: 'start'});
+});
+$('#saveBtn').addEventListener('click', () => saveFile(currentFile()));
+$('#editor').addEventListener('change', e => {
+  const t = e.target;
+  if (t.classList.contains('xi')){ commitEdit(t.closest('.xf').dataset.key, t.value); filterEditor(); }
+  else if (t.id === 'edOnlyChanged') filterEditor();
+});
+$('#editor').addEventListener('input', e => { if (e.target.id === 'edFind') filterEditor(); });
+$('#editor').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.classList.contains('xi')){ e.preventDefault(); e.target.blur(); }
+  if (e.key === 'Escape' && e.target.classList.contains('xi')){ e.target.value = e.target.dataset.focusVal ?? e.target.value; e.target.blur(); }
+});
+$('#editor').addEventListener('focusin', e => { if (e.target.classList.contains('xi')) e.target.dataset.focusVal = e.target.value; });
+let revertArmed = 0;
+$('#editor').addEventListener('click', e => {
+  const undo = e.target.closest('[data-undo]');
+  if (undo){
+    const key = undo.dataset.undo, [fi, ci, ord] = key.split(':').map(Number);
+    const ch = state.files[fi].changes.get(`${ci}:${ord}`);
+    if (ch) commitEdit(key, ch.oldValue);
+    return;
+  }
+  const go = e.target.closest('[data-goto]'); if (go){ gotoField(go.dataset.goto); return; }
+  if (e.target.closest('#edSave')){ saveFile(currentFile()); return; }
+  const rv = e.target.closest('#edRevert');
+  if (rv){
+    const f = currentFile(); if (!f || !f.changes.size) return;
+    if (Date.now() - revertArmed < 4000){
+      revertArmed = 0; f.changes.clear(); f.dirty = !!f.savedAs;
+      reparse(state.files.indexOf(f)); renderEditor(); toast('All changes undone');
+    } else {
+      revertArmed = Date.now(); rv.textContent = `Click again to undo ${plural(f.changes.size, 'change')}`;
+      setTimeout(() => { if (rv.isConnected) rv.textContent = 'Undo all'; }, 4000);
+    }
+  }
+});
+$('#intake').addEventListener('click', async e => {
+  const b = e.target.closest('[data-guard]'); if (!b) return;
+  const act = b.dataset.guard;
+  if (act === 'cancel'){ state.pending = null; renderIntake(); }
+  else if (act === 'discard'){ const a = state.pending; state.pending = null; state.files.forEach(f => { f.dirty = false; }); renderIntake(); if (a) a(); }
+  else if (act === 'save'){
+    for (const f of state.files.filter(x => x.dirty)) if (!(await saveFile(f))) return;
+    state.pending = null; renderIntake(); toast('Saved. You can open another file now.');
+  }
+});
 $('#file').addEventListener('change', e => { loadFiles(e.target.files); e.target.value = ''; });
 $('#export').addEventListener('click', doExport);
 $('#search').addEventListener('input', e => { state.query = e.target.value.trim(); renderIndex(); });
 $('#list').addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
-  state.sel = +b.dataset.i; renderIndex(); renderReport();
+  state.sel = +b.dataset.i; renderIndex(); renderReport(); renderEditor();
   if (window.matchMedia('(max-width: 900px)').matches) $('#report').scrollIntoView({behavior: 'smooth', block: 'start'});
 });
 document.addEventListener('click', e => {
@@ -1169,6 +1717,7 @@ $('#report').addEventListener('click', e => {
 });
 document.addEventListener('toggle', e => {
   if (e.target.id === 'ksHelp') ksHelpOpen = e.target.open;
+  if (e.target.id === 'edChangesList') state.changesOpen = e.target.open;
   if (e.target.id === 'raw' && e.target.open){
     const r = state.reports[state.sel], pre = $('#xmlPre');
     if (r && pre && !pre.textContent) pre.textContent = pretty(r.el, 0);
@@ -1187,27 +1736,34 @@ const hasFiles = e => Array.from(e.dataTransfer?.types || []).includes('Files');
 window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
 window.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
 window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) document.body.classList.remove('dragging'); });
-window.addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); loadFiles(e.dataTransfer.files); });
+window.addEventListener('drop', e => {
+  if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
+  const files = Array.from(e.dataTransfer.files); guard(() => loadFiles(files));
+});
 document.addEventListener('paste', e => {
+  if (e.target && e.target.closest && e.target.closest('input, textarea')) return;
   const t = e.clipboardData && e.clipboardData.getData('text');
   if (t && /(<|&lt;)(RESPONSE|RSP_REPORT)\b/.test(t)){
-    e.preventDefault(); load([{name: 'Pasted text', text: t}]);
-    toast(state.reports.length ? `Read ${plural(state.reports.length, 'report')}` : 'No reports found in the pasted text');
+    e.preventDefault();
+    guard(() => {
+      load([{name: 'Pasted text', text: t}]);
+      toast(state.reports.length ? `Read ${plural(state.reports.length, 'report')}` : 'No reports found in the pasted text');
+    });
   }
 });
 
 /* ---------------- start ---------------- */
 load([{name: 'Example', text: SAMPLE}], true);
 (async () => {
-  let inFrame = true;
-  try { inFrame = window.self !== window.top; } catch (e) {}
   if (inFrame){
     /* inside the Claude artifact viewer: saves go through the downloads capability */
     try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
   } else {
     /* opened directly (local file, GitHub Pages): an ordinary browser download */
     downloads = {save: async ({filename, data}) => {
-      const url = URL.createObjectURL(new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      const ext = (/\.([^.]+)$/.exec(filename) || ['', ''])[1].toLowerCase();
+      const type = {xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xml: 'application/xml', txt: 'text/plain'}[ext] || 'application/octet-stream';
+      const url = URL.createObjectURL(new Blob([data], {type}));
       const a = document.createElement('a');
       a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -1215,6 +1771,8 @@ load([{name: 'Example', text: SAMPLE}], true);
     }};
   }
   $('#export').hidden = !downloads;
+  updateSaveUi();
+  if (state.editing) renderEditor();
 })();
 })();
 </script>
